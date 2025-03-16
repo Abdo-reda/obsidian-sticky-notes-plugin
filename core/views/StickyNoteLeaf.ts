@@ -1,4 +1,4 @@
-import { Colors, getColorCSS } from "core/constants/colors";
+import { getColorCSS } from "core/constants/colors";
 import {
 	ItemView,
 	Menu,
@@ -12,27 +12,27 @@ import {
 import { BrowserWindow } from "@electron/remote";
 import { ColorMenu } from "core/menus/colorMenu";
 import { LoggingService } from "core/services/LogginService";
-import type StickyNotesPlugin from "main";
-import { defaultSize } from "./SettingsTab";
+import { SettingService } from "core/services/SettingService";
+import { Colors } from "core/enums/colorEnum";
+import { SizeOptions } from "core/enums/sizeOptionEnum";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
 	public static leafsList = new Set<StickyNoteLeaf>();
+	private settingService: SettingService;
 
-	DEFAULT_DIMENSION = 300;
 	DEFAULT_COLOR = Colors.YELLOW;
 
 	id: number;
-	plugin: StickyNotesPlugin;
 	leaf: WorkspaceLeaf;
 	view: View;
 	document: Document;
 	mainWindow: Electron.BrowserWindow | undefined;
 	colorMenu: Menu;
 
-	constructor(leaf: WorkspaceLeaf, plugin: StickyNotesPlugin) {
+	constructor(leaf: WorkspaceLeaf, settingService: SettingService) {
+		this.settingService = settingService;
 		this.leaf = leaf;
-		this.plugin = plugin;
 		this.view = leaf.view;
 		this.document = this.leaf.getContainer().win.activeDocument;
 		this.id = StickyNoteLeaf.stickyNoteId;
@@ -74,22 +74,14 @@ export class StickyNoteLeaf {
 
 		this.mainWindow = mainWindow;
 
-		// Extract dimensions from settings
-		const [width, height] = this.plugin.settingsManager.settings.dimensions
-			.split("x")
-			.map(Number);
-
-		this.mainWindow.setSize(
-			width || this.DEFAULT_DIMENSION,
-			height || this.DEFAULT_DIMENSION
-		);
+		const [width, height] = this.settingService.getWindowDimensions();
+		this.mainWindow.setSize(width, height);
 		this.mainWindow.setResizable(true);
 
 		if (
-			this.plugin.settingsManager.settings.defaultSize ===
-			defaultSize.rememberLastDimension
+			this.settingService.settings.sizeOption ===
+			SizeOptions.REMEMBER_LAST
 		) {
-			// Save updated dimensions when resized
 			this.mainWindow.on("resize", () => this.saveDimensions());
 		}
 
@@ -98,14 +90,8 @@ export class StickyNoteLeaf {
 
 	private saveDimensions() {
 		if (!this.mainWindow) return;
-
 		const [width, height] = this.mainWindow.getSize();
-		const newDimensions = `${width}x${height}`;
-
-		this.plugin.settingsManager.settings.dimensions = newDimensions;
-		this.plugin.settingsManager.saveSettings(this.plugin.settingsManager.settings);
-
-		LoggingService.info(`Updated dimensions saved: ${newDimensions}`);
+		this.settingService.updateWindowDimensions(width, height);
 	}
 
 	private removeDefaultActionsMenu() {

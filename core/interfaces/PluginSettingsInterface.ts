@@ -1,7 +1,13 @@
+import { Colors } from "core/enums/colorEnum";
+import { SizeOptions } from "core/enums/sizeOptionEnum";
+
+const DEFAULT_WIDTH = 300;
+const DEFAULT_HEIGHT = 300;
+
 export interface IPluginSettings {
-	defaultSize: string;
+	sizeOption: SizeOptions;
 	dimensions: string;
-    defaultColor: string;
+    defaultColor: Colors;
 }
 
 // - colors
@@ -11,7 +17,7 @@ export interface IPluginSettings {
 // - memorize sticky ntoes
 
 export const DEFAULT_SETTINGS: IPluginSettings = {
-	defaultSize: "default",
-	dimensions: "300x300",
-	defaultColor: "yellow",
+	sizeOption: SizeOptions.DEFAULT,
+	dimensions: `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`,
+	defaultColor: Colors.YELLOW,
 };

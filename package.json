@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-sticky-notes-plugin",
-	"version": "0.7.8",
+	"version": "0.8.0",
 	"description": "This is a sticky notes plugin for obsidian",
 	"main": "main.js",
 	"scripts": {
