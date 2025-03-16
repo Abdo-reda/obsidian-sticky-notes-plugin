@@ -1,4 +1,3 @@
-import { getColorCSS } from "core/constants/colors";
 import {
 	ItemView,
 	Menu,
@@ -13,26 +12,33 @@ import { BrowserWindow } from "@electron/remote";
 import { ColorMenu } from "core/menus/colorMenu";
 import { LoggingService } from "core/services/LogginService";
 import { SettingService } from "core/services/SettingService";
-import { Colors } from "core/enums/colorEnum";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
+import StickyNotesPlugin from "main";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
 	public static leafsList = new Set<StickyNoteLeaf>();
 	private settingService: SettingService;
 
-	DEFAULT_COLOR = Colors.YELLOW;
-
 	id: number;
 	leaf: WorkspaceLeaf;
 	view: View;
 	document: Document;
 	mainWindow: Electron.BrowserWindow | undefined;
-	colorMenu: Menu;
+	colorMenu: ColorMenu;
+	plugin: StickyNotesPlugin;
+	file: TFile;
 
-	constructor(leaf: WorkspaceLeaf, settingService: SettingService) {
-		this.settingService = settingService;
+	constructor(
+		leaf: WorkspaceLeaf,
+		settingService: SettingService,
+		plugin: StickyNotesPlugin,
+		file: TFile
+	) {
 		this.leaf = leaf;
+		this.plugin = plugin;
+		this.file = file;
+		this.settingService = settingService;
 		this.view = leaf.view;
 		this.document = this.leaf.getContainer().win.activeDocument;
 		this.id = StickyNoteLeaf.stickyNoteId;
@@ -55,7 +61,7 @@ export class StickyNoteLeaf {
 	}
 
 	initView() {
-		LoggingService.info("Updaing Sticky Note view");
+		LoggingService.info("Updating Sticky Note view");
 		this.view = this.leaf.view;
 		this.removeDefaultActionsMenu();
 		this.removeHeader();
@@ -96,10 +102,10 @@ export class StickyNoteLeaf {
 
 	private removeDefaultActionsMenu() {
 		const actionsEl = this.view.containerEl.querySelector(".view-actions");
-		const leftAcionsEl =
+		const leftActionsEl =
 			this.view.containerEl.querySelector(".view-header-left");
 		actionsEl?.empty();
-		leftAcionsEl?.empty();
+		leftActionsEl?.empty();
 	}
 
 	private removeHeader() {
@@ -153,13 +159,43 @@ export class StickyNoteLeaf {
 	}
 
 	private initColorMenu() {
-		this.colorMenu = new ColorMenu(this.document.body);
-		this.setDefaultColor();
+		this.colorMenu = new ColorMenu(
+			this.document.body,
+			this.settingService,
+			this.file,
+			this.plugin
+		);
+		this.setbgColors();
 	}
 
-	private setDefaultColor() {
+	private setbgColors() {
+		const frontmatter = this.plugin.app.metadataCache.getFileCache(
+			this.file
+		)?.frontmatter;
+		console.log("Frontmatter", frontmatter);
+
+		const bgColors = this.settingService.settings.bgColors;
+
+		let selectedColor = bgColors.find((color) => color.order === 1)?.color;
+
+		if (frontmatter) {
+			for (const color of bgColors) {
+				const { property, value } = color;
+
+				if (
+					(Array.isArray(frontmatter[property]) &&
+						frontmatter[property].includes(value)) ||
+					frontmatter[property] === value
+				) {
+					selectedColor = color.color;
+					break;
+				}
+			}
+		}
+
+		selectedColor = selectedColor || "";
 		this.document.body.setCssProps({
-			"--background-primary": getColorCSS(this.DEFAULT_COLOR),
+			"--background-primary": selectedColor,
 		});
 	}
 }

@@ -1,10 +1,4 @@
-import {
-	Menu,
-	Plugin,
-	TFile,
-	WorkspaceLeaf,
-	setTooltip,
-} from "obsidian";
+import { Menu, Plugin, TFile, WorkspaceLeaf, setTooltip } from "obsidian";
 
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
 import { LoggingService } from "core/services/LogginService";
@@ -32,7 +26,7 @@ export default class StickyNotesPlugin extends Plugin {
 	}
 
 	private destroyAllStickyNotes() {
-		StickyNoteLeaf.leafsList.forEach(l => l.leaf.detach())
+		StickyNoteLeaf.leafsList.forEach((l) => l.leaf.detach());
 	}
 
 	private addStickyNoteCommand() {
@@ -85,7 +79,9 @@ export default class StickyNotesPlugin extends Plugin {
 	private async addSettings() {
 		this.settingsManager = new SettingService(this);
 		await this.settingsManager.initSettings();
-		this.addSettingTab(new StickyNotesSettingsTab(this.app, this, this.settingsManager));
+		this.addSettingTab(
+			new StickyNotesSettingsTab(this.app, this, this.settingsManager)
+		);
 	}
 
 	// private addPopoutClosedListner() {
@@ -99,25 +95,39 @@ export default class StickyNotesPlugin extends Plugin {
 	// }
 
 	private addLeafChangeListner() {
-		const leafChangeEvent = this.app.workspace.on('active-leaf-change', (leaf: WorkspaceLeaf | null) => {
-			const noteId = leaf?.getContainer().win.activeDocument.documentElement.getAttribute('note-id');
-			StickyNoteLeaf.leafsList.forEach(l => {
-				if (l.title === noteId) l.initView()
-			})
-		})
+		const leafChangeEvent = this.app.workspace.on(
+			"active-leaf-change",
+			(leaf: WorkspaceLeaf | null) => {
+				const noteId = leaf
+					?.getContainer()
+					.win.activeDocument.documentElement.getAttribute("note-id");
+				StickyNoteLeaf.leafsList.forEach((l) => {
+					if (l.title === noteId) l.initView();
+				});
+			}
+		);
 		this.registerEvent(leafChangeEvent);
 	}
 
 	private async openStickyNotePopup(file: TFile | null = null) {
 		LoggingService.info("Opened Sticky Note Popup");
 		file = file ?? this.app.workspace.getActiveFile();
+		if (!(file instanceof TFile)) {
+			LoggingService.warn("No file is active to open a sticky note");
+			return;
+		}
 		const popoutLeaf = this.app.workspace.openPopoutLeaf({
 			size: {
 				height: 300,
 				width: 300,
 			},
 		});
-		const stickNoteLeaf = new StickyNoteLeaf(popoutLeaf, this.settingsManager);
+		const stickNoteLeaf = new StickyNoteLeaf(
+			popoutLeaf,
+			this.settingsManager,
+			this,
+			file
+		);
 		await stickNoteLeaf.initStickyNote(file);
 	}
 }

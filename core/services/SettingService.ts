@@ -3,8 +3,8 @@ import {
 	IPluginSettings,
 } from "core/interfaces/PluginSettingsInterface";
 
-import type StickyNotesPlugin from "main";
 import { LoggingService } from "./LogginService";
+import type StickyNotesPlugin from "main";
 
 export class SettingService {
 	plugin: StickyNotesPlugin;
