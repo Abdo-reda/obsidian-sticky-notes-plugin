@@ -102,15 +102,18 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 	}
 
 	addBgColorSetting() {
-		const bgColors = this.settingService.settings.bgColors;
-		const bgContainer = this.containerEl.createDiv({
+		const bgColorSettingContainer = this.containerEl.createDiv({
 			cls: "BgColorSettingContainer",
 		});
-		new Setting(this.containerEl)
+		new Setting(bgColorSettingContainer)
 			.setName("Automatic background colors")
 			.setDesc(
 				"Set the background colors for a corresponding YAML property-value pair to get dynamic colors. Change the order to give them priority. Top-most color will be used as the default color."
 			);
+
+		const bgContainer = bgColorSettingContainer.createDiv({
+			cls: "BgColorSettingContainer",
+		});
 		Sortable.create(bgContainer, {
 			animation: 150,
 			ghostClass: "sticky-note-sortable-ghost",
