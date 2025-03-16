@@ -5,13 +5,15 @@ import {
 	Setting,
 	TextComponent,
 } from "obsidian";
-import type StickyNotesPlugin from "main";
-import { SizeOptions } from "core/enums/sizeOptionEnum";
+
 import { SettingService } from "core/services/SettingService";
+import { SizeOptions } from "core/enums/sizeOptionEnum";
+import type StickyNotesPlugin from "main";
 
 export class StickyNotesSettingsTab extends PluginSettingTab {
 	settingService: SettingService;
 	dimensionTextSetting: TextComponent;
+	windowSizeSettingContainer: HTMLElement;
 
 	constructor(
 		app: App,
@@ -36,7 +38,10 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 	}
 
 	addSizeSetting() {
-		return new Setting(this.containerEl)
+		this.windowSizeSettingContainer = this.containerEl.createDiv({
+			cls: "BgColorSettingContainer",
+		});
+		return new Setting(this.windowSizeSettingContainer)
 			.setName("Default size")
 			.setDesc(
 				"Select what default size each new sticky note window should take."
@@ -68,6 +73,25 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 								this.settingService.settings.dimensions
 							);
 						}
+
+						// TODO : This implementation is getting too complex, can be removed if feels unnecessary
+						const stickyNotesResizables = document.querySelectorAll(
+							".sticky-notes-resizable-setting"
+						);
+						// Show or hide the resizable setting
+						if (
+							value !== SizeOptions.REMEMBER_LAST &&
+							!stickyNotesResizables.length
+						) {
+							this.addResizableSetting();
+						} else if (value === SizeOptions.REMEMBER_LAST) {
+							this.containerEl
+								.querySelector(
+									".sticky-notes-resizable-setting"
+								)
+								?.remove();
+								this.settingService.settings.resizable = true;
+						}
 					})
 			)
 			.addText((text) => {
@@ -88,8 +112,30 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 							dimensions: newDimensions,
 						});
 					})
-					.setDisabled(this.settingService.settings.sizeOption !== SizeOptions.CUSTOM);
+					.setDisabled(
+						this.settingService.settings.sizeOption !==
+							SizeOptions.CUSTOM
+					);
 				return this.dimensionTextSetting;
 			});
+	}
+
+	addResizableSetting() {
+		return new Setting(
+			this.windowSizeSettingContainer.createDiv(
+				"sticky-notes-resizable-setting"
+			)
+		)
+			.setName("Resizable Window")
+			.setDesc("Enable or disable window resizing for new sticky notes.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.settingService.settings.resizable)
+					.onChange(async (value) => {
+						await this.settingService.updateSettings({
+							resizable: value,
+						});
+					})
+			);
 	}
 }

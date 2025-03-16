@@ -76,7 +76,7 @@ export class StickyNoteLeaf {
 
 		const [width, height] = this.settingService.getWindowDimensions();
 		this.mainWindow.setSize(width, height);
-		this.mainWindow.setResizable(true);
+		this.mainWindow.setResizable(this.settingService.settings.resizable);
 
 		if (
 			this.settingService.settings.sizeOption ===

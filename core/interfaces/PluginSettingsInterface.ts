@@ -7,6 +7,7 @@ const DEFAULT_HEIGHT = 300;
 export interface IPluginSettings {
 	sizeOption: SizeOptions;
 	dimensions: string;
+	resizable: boolean;
     defaultColor: Colors;
 }
 
@@ -19,5 +20,6 @@ export interface IPluginSettings {
 export const DEFAULT_SETTINGS: IPluginSettings = {
 	sizeOption: SizeOptions.DEFAULT,
 	dimensions: `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`,
-	defaultColor: Colors.YELLOW,
+	resizable: false,
+	defaultColor: Colors.DEFAULT,
 };
