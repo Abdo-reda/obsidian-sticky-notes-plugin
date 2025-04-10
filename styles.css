@@ -25,6 +25,10 @@
     --icon-color: var(--color-base-100);
     --icon-color-hover: var(--color-base-100);
 }
+
+.disabled-setting {
+    opacity: 50%;
+}
     
 .color-menu {
     row-gap: 4px;
