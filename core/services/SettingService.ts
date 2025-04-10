@@ -1,19 +1,57 @@
-import { DEFAULT_SETTINGS, IPluginSettings } from "core/interfaces/PluginSettingsInterface";
-import type { Plugin } from "obsidian";
+import {
+	DEFAULT_SETTINGS,
+	IPluginSettings,
+} from "core/interfaces/PluginSettingsInterface";
+
+import type StickyNotesPlugin from "main";
+import { LoggingService } from "./LogginService";
 
 export class SettingService {
-    plugin: Plugin;
-	settings: IPluginSettings;
+	plugin: StickyNotesPlugin;
+	private _settings: IPluginSettings;
 
-    constructor(plugin: Plugin) {
-        this.plugin = plugin;
-    }
-    
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.plugin.loadData());
+	constructor(plugin: StickyNotesPlugin) {
+		this.plugin = plugin;
 	}
 
-	async saveSettings() {
-		await this.plugin.saveData(this.settings);
+	get settings(): Readonly<IPluginSettings> {
+		return this._settings;
+	}
+
+	async initSettings() {
+		await this.loadSettings();
+	}
+
+	async updateSettings(updatedSettings: Partial<IPluginSettings>) {
+		LoggingService.info("Updated settings", this.updateSettings);
+		this._settings = {
+			...this._settings,
+			...updatedSettings,
+		};
+		await this.saveSettings();
+	}
+
+	async updateWindowDimensions(width: number, height: number) {
+		const newDimensions = `${width}x${height}`;
+		this.updateSettings({
+			dimensions: newDimensions,
+		});
+	}
+
+	getWindowDimensions() {
+		return this._settings.dimensions.split("x").map(Number);
+	}
+
+	private async loadSettings() {
+		this._settings = await Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.plugin.loadData()
+		);
+		this.plugin.globalSettings = this._settings;
+	}
+
+	private async saveSettings() {
+		await this.plugin.saveData(this._settings);
 	}
 }

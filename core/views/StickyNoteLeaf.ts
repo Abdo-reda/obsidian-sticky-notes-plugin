@@ -1,22 +1,26 @@
-import { BrowserWindow } from "@electron/remote";
-import { Colors, getColorCSS } from "core/constants/colors";
-import { ColorMenu } from "core/menus/colorMenu";
-import { LoggingService } from "core/services/LogginService";
+import { getColorCSS } from "core/constants/colors";
 import {
 	ItemView,
 	Menu,
-	setIcon,
-	setTooltip,
 	TFile,
 	View,
 	WorkspaceLeaf,
+	setIcon,
+	setTooltip,
 } from "obsidian";
+
+import { BrowserWindow } from "@electron/remote";
+import { ColorMenu } from "core/menus/colorMenu";
+import { LoggingService } from "core/services/LogginService";
+import { SettingService } from "core/services/SettingService";
+import { Colors } from "core/enums/colorEnum";
+import { SizeOptions } from "core/enums/sizeOptionEnum";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
 	public static leafsList = new Set<StickyNoteLeaf>();
+	private settingService: SettingService;
 
-	DEFAULT_DIMENSION = 300;
 	DEFAULT_COLOR = Colors.YELLOW;
 
 	id: number;
@@ -26,7 +30,8 @@ export class StickyNoteLeaf {
 	mainWindow: Electron.BrowserWindow | undefined;
 	colorMenu: Menu;
 
-	constructor(leaf: WorkspaceLeaf) {
+	constructor(leaf: WorkspaceLeaf, settingService: SettingService) {
+		this.settingService = settingService;
 		this.leaf = leaf;
 		this.view = leaf.view;
 		this.document = this.leaf.getContainer().win.activeDocument;
@@ -66,10 +71,27 @@ export class StickyNoteLeaf {
 			);
 			return;
 		}
+
 		this.mainWindow = mainWindow;
-		this.mainWindow.setSize(this.DEFAULT_DIMENSION, this.DEFAULT_DIMENSION);
-		this.mainWindow.setResizable(false);
+
+		const [width, height] = this.settingService.getWindowDimensions();
+		this.mainWindow.setSize(width, height);
+		this.mainWindow.setResizable(this.settingService.settings.resizable);
+
+		if (
+			this.settingService.settings.sizeOption ===
+			SizeOptions.REMEMBER_LAST
+		) {
+			this.mainWindow.on("resize", () => this.saveDimensions());
+		}
+
 		this.pinAction(true);
+	}
+
+	private saveDimensions() {
+		if (!this.mainWindow) return;
+		const [width, height] = this.mainWindow.getSize();
+		this.settingService.updateWindowDimensions(width, height);
 	}
 
 	private removeDefaultActionsMenu() {
@@ -136,8 +158,8 @@ export class StickyNoteLeaf {
 	}
 
 	private setDefaultColor() {
-        this.document.body.setCssProps({
+		this.document.body.setCssProps({
 			"--background-primary": getColorCSS(this.DEFAULT_COLOR),
 		});
-    }
+	}
 }
