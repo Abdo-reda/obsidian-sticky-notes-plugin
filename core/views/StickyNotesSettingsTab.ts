@@ -296,5 +296,30 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 							})
 					);
 			});
+
+		const addButtonContainer = bgColorSettingContainer.createDiv();
+		addButtonContainer.style.display = "flex";
+		addButtonContainer.style.justifyContent = "flex-end";
+		addButtonContainer.style.marginTop = "12px";
+
+		const addButton = addButtonContainer.createEl("button", {
+			text: "Add new color",
+		});
+		addButton.classList.add("mod-cta");
+
+		addButton.onclick = async () => {
+			const newTag: BgColor = {
+				property: "background",
+				value: "red",
+				color: "rgba(255, 0, 0, 0.5)",
+				order: this.settingService.settings.bgColors.length + 1,
+			};
+
+			this.settingService.settings.bgColors.push(newTag);
+			await this.settingService.updateSettings(
+				this.settingService.settings
+			);
+			this.display();
+		};
 	}
 }
