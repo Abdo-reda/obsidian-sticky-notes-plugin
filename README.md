@@ -12,10 +12,8 @@ You can open this popout window using the ribbon action, command, or context men
 
 - Windows (sticky note windows) don't close themselves when obsidian shutsdown, and unfortunely reopen as normal popups when obsidian restarts. (hopefully can be fixed in a future release.)
 
-- Currently there is no Settings (might change in the future), Default values:
+- There is no Color Settings yet:
     - **Sticky Note default color:** `Yellow color (250, 240, 208)`
-    - **Sticky Note default window dimension**: `300x300`
-
 
 - The plugin relies on `@electorn/remote` to work, as the pin functionality and resizing require access to the node/main process apis. This is not the recommended approach, but the only one that worked with me after some research.
 
@@ -27,7 +25,8 @@ You can open this popout window using the ribbon action, command, or context men
 - Download the `sticky-notes.zip` file and extract it inside of your obsidian vault plugins folder `<vault>\.obsidian\plugins`.
 - Reload obsidian and make sure to enable the plugin in the `community plugins` section in vault settings.
 
-> [WARNING] make sure to copy and backup your obsidian notes. This is a just a precaution.
+> [!WARNING]  
+> Make sure to copy and backup your obsidian notes. This is a just a precaution, the plugin hopefully should be totally safe and no issues have been reported so far.
 
 ## Version Workflow
 
@@ -44,8 +43,6 @@ You can open this popout window using the ribbon action, command, or context men
 - Add Support for different settings.
     - colors
     - defualt color
-    - default size
-    - enable resize
     - memorize sticky ntoes
 - Fix the bug where sticky notes don't reopen as sticky notes. (close them before obsidian closes, and memorize them in local storage maybe)
     //add settings for remember sticky notes

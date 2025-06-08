@@ -14,6 +14,8 @@ export interface BgColor {
 	property: string;
 	value: string;
 	color: string;
+	resizable: boolean;
+  defaultColor: Colors;
 }
 
 // - colors
@@ -87,4 +89,6 @@ export const DEFAULT_SETTINGS: IPluginSettings = {
 			color: "rgba(255, 255, 255, 0.5)",
 		},
 	],
+	resizable: false,
+	defaultColor: Colors.DEFAULT,
 };

@@ -14,7 +14,7 @@ export class SettingService {
 		this.plugin = plugin;
 	}
 
-	get settings() {
+	get settings(): Readonly<IPluginSettings> {
 		return this._settings;
 	}
 
