@@ -41,8 +41,6 @@ You can open this popout window using the ribbon action, command, or context men
 
 ## ENHANCEMENTS
 - Add Support for different settings.
-    - colors
-    - defualt color
     - memorize sticky ntoes
 - Fix the bug where sticky notes don't reopen as sticky notes. (close them before obsidian closes, and memorize them in local storage maybe)
     //add settings for remember sticky notes
