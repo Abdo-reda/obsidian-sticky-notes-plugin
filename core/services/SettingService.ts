@@ -2,9 +2,8 @@ import {
 	DEFAULT_SETTINGS,
 	IPluginSettings,
 } from "core/interfaces/PluginSettingsInterface";
-
-import type StickyNotesPlugin from "main";
 import { LoggingService } from "./LogginService";
+import type StickyNotesPlugin from "main";
 
 export class SettingService {
 	plugin: StickyNotesPlugin;
@@ -23,7 +22,7 @@ export class SettingService {
 	}
 
 	async updateSettings(updatedSettings: Partial<IPluginSettings>) {
-		LoggingService.info("Updated settings", this.updateSettings);
+		LoggingService.info("Updated settings", updatedSettings);
 		this._settings = {
 			...this._settings,
 			...updatedSettings,

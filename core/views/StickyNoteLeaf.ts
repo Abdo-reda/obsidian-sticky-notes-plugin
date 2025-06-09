@@ -1,4 +1,3 @@
-import { getColorCSS } from "core/constants/colors";
 import {
 	ItemView,
 	Menu,
@@ -12,26 +11,31 @@ import {
 import { BrowserWindow } from "@electron/remote";
 import { ColorMenu } from "core/menus/colorMenu";
 import { LoggingService } from "core/services/LogginService";
-import { SettingService } from "core/services/SettingService";
-import { Colors } from "core/enums/colorEnum";
+import { type SettingService } from "core/services/SettingService";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
+import { type MarkdownService } from "core/services/MarkdownService";
+import { isLightTheme } from "core/utils/colorUtils";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
 	public static leafsList = new Set<StickyNoteLeaf>();
 	private settingService: SettingService;
-
-	DEFAULT_COLOR = Colors.YELLOW;
+	private markdownService: MarkdownService;
 
 	id: number;
 	leaf: WorkspaceLeaf;
 	view: View;
 	document: Document;
 	mainWindow: Electron.BrowserWindow | undefined;
-	colorMenu: Menu;
+	colorMenu: ColorMenu;
 
-	constructor(leaf: WorkspaceLeaf, settingService: SettingService) {
+	constructor(
+		leaf: WorkspaceLeaf,
+		settingService: SettingService,
+        markdownService: MarkdownService,
+	) {
 		this.settingService = settingService;
+        this.markdownService = markdownService;
 		this.leaf = leaf;
 		this.view = leaf.view;
 		this.document = this.leaf.getContainer().win.activeDocument;
@@ -48,14 +52,14 @@ export class StickyNoteLeaf {
 		LoggingService.info(`Init Sticky Note ${this.id} ...`);
 		this.document.title = this.title;
 		this.document.documentElement.setAttribute("note-id", this.title);
-		this.initColorMenu();
+		this.initColorMenu(file);
 		this.initView();
 		this.initMainWindow();
 		if (file) await this.leaf.openFile(file);
 	}
 
 	initView() {
-		LoggingService.info("Updaing Sticky Note view");
+		LoggingService.info("Initializing Sticky Note view ...");
 		this.view = this.leaf.view;
 		this.removeDefaultActionsMenu();
 		this.removeHeader();
@@ -96,10 +100,10 @@ export class StickyNoteLeaf {
 
 	private removeDefaultActionsMenu() {
 		const actionsEl = this.view.containerEl.querySelector(".view-actions");
-		const leftAcionsEl =
+		const leftActionsEl =
 			this.view.containerEl.querySelector(".view-header-left");
 		actionsEl?.empty();
-		leftAcionsEl?.empty();
+		leftActionsEl?.empty();
 	}
 
 	private removeHeader() {
@@ -152,14 +156,36 @@ export class StickyNoteLeaf {
 		setTooltip(pinButton, isPinned ? "UnPin" : "Pin");
 	}
 
-	private initColorMenu() {
-		this.colorMenu = new ColorMenu(this.document.body);
-		this.setDefaultColor();
+	private initColorMenu(file: TFile | null = null) {
+		this.colorMenu = new ColorMenu(
+			this.document.body,
+            this.settingService.settings.bgColors,
+            this.settingService.settings.rememberBgColors,
+            this.markdownService.updateFrontmatterAsync.bind(this.markdownService),
+		);
+        this.setDefaultColor(file);
 	}
 
-	private setDefaultColor() {
+	private async setDefaultColor(file: TFile | null = null) {
+        const rememberColors = this.settingService.settings.rememberBgColors;
+        let defaultColor = this.settingService.settings.bgColors.find(bg => bg.isDefault);
+        if (rememberColors) {
+            const frontMatter = await this.markdownService.getFrontmatterAsync(file);
+            for (const [property, value] of Object.entries(frontMatter)) {
+                defaultColor = this.settingService.settings.bgColors.find(bg => bg.property === property && bg.value === value) ?? defaultColor;
+            }
+        }
+        if (!defaultColor) {
+            LoggingService.warn("No default color found ...")
+            return;
+        }
 		this.document.body.setCssProps({
-			"--background-primary": getColorCSS(this.DEFAULT_COLOR),
+			"--background-primary": isLightTheme() ? defaultColor.lightColor : defaultColor.darkColor,
 		});
+        if (rememberColors) {
+            this.markdownService.updateFrontmatterAsync(file, {
+                [defaultColor.property]: defaultColor.value
+            })
+        }
 	}
 }

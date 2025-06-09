@@ -1,24 +1,20 @@
-import {
-	Menu,
-	Plugin,
-	TFile,
-	WorkspaceLeaf,
-	setTooltip,
-} from "obsidian";
-
+import { Menu, Plugin, TFile, WorkspaceLeaf, setTooltip } from "obsidian";
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
 import { LoggingService } from "core/services/LogginService";
 import { SettingService } from "core/services/SettingService";
 import { StickyNoteLeaf } from "core/views/StickyNoteLeaf";
 import { StickyNotesSettingsTab } from "core/views/StickyNotesSettingsTab";
+import { MarkdownService } from "core/services/MarkdownService";
 
 export default class StickyNotesPlugin extends Plugin {
+    markdownService: MarkdownService;
 	settingsManager: SettingService;
 	globalSettings: IPluginSettings;
 
 	async onload() {
 		LoggingService.disable();
 		LoggingService.info("Sticky Notes : plugin loading....");
+        this.addServices();
 		this.addSettings();
 		this.addStickyNoteRibbonAction();
 		this.addStickyNoteCommand();
@@ -32,7 +28,7 @@ export default class StickyNotesPlugin extends Plugin {
 	}
 
 	private destroyAllStickyNotes() {
-		StickyNoteLeaf.leafsList.forEach(l => l.leaf.detach())
+		StickyNoteLeaf.leafsList.forEach((l) => l.leaf.detach());
 	}
 
 	private addStickyNoteCommand() {
@@ -82,15 +78,21 @@ export default class StickyNotesPlugin extends Plugin {
 		});
 	}
 
+    private addServices() {
+		this.markdownService = new MarkdownService(this);
+	}
+
 	private async addSettings() {
 		this.settingsManager = new SettingService(this);
 		await this.settingsManager.initSettings();
-		this.addSettingTab(new StickyNotesSettingsTab(this.app, this, this.settingsManager));
+		this.addSettingTab(
+			new StickyNotesSettingsTab(this.app, this, this.settingsManager)
+		);
 	}
 
 	// private addPopoutClosedListner() {
 	// 	const closeEvent = this.app.workspace.on('window-close', (win: WorkspaceWindow, window: Window) => {
-	// 		const noteId = win.doc.documentElement.getAttribute('note-id');
+	// 		const noteId = win.doc.documentElement.6Attribute('note-id');
 	// 		if (noteId) {
 	// 			StickyNoteManager.removeBrowserWindow(noteId);
 	// 		}
@@ -99,12 +101,17 @@ export default class StickyNotesPlugin extends Plugin {
 	// }
 
 	private addLeafChangeListner() {
-		const leafChangeEvent = this.app.workspace.on('active-leaf-change', (leaf: WorkspaceLeaf | null) => {
-			const noteId = leaf?.getContainer().win.activeDocument.documentElement.getAttribute('note-id');
-			StickyNoteLeaf.leafsList.forEach(l => {
-				if (l.title === noteId) l.initView()
-			})
-		})
+		const leafChangeEvent = this.app.workspace.on(
+			"active-leaf-change",
+			(leaf: WorkspaceLeaf | null) => {
+				const noteId = leaf
+					?.getContainer()
+					.win.activeDocument.documentElement.getAttribute("note-id");
+				StickyNoteLeaf.leafsList.forEach((l) => {
+					if (l.title === noteId) l.initView();
+				});
+			}
+		);
 		this.registerEvent(leafChangeEvent);
 	}
 
@@ -117,7 +124,11 @@ export default class StickyNotesPlugin extends Plugin {
 				width: 300,
 			},
 		});
-		const stickNoteLeaf = new StickyNoteLeaf(popoutLeaf, this.settingsManager);
+		const stickNoteLeaf = new StickyNoteLeaf(
+			popoutLeaf,
+			this.settingsManager,
+            this.markdownService,
+		);
 		await stickNoteLeaf.initStickyNote(file);
 	}
 }

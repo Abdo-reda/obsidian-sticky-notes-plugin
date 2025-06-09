@@ -1,71 +1,39 @@
-
-.theme-dark {
-    --sticky-note-red: 237, 84, 101;
-    --sticky-note-orange: 239, 139, 43;
-    --sticky-note-yellow: 230, 172, 20;
-    --sticky-note-green: 48, 187, 110;
-    --sticky-note-cyan: 43, 180, 201;
-    --sticky-note-blue: 48, 134, 229;
-    --sticky-note-purple: 143, 112, 242;
-    --sticky-note-pink: 220, 90, 154;
-}
-
-.theme-light {
-    --sticky-note-red: 250, 218, 223;
-    --sticky-note-orange: 250, 231, 208;
-    --sticky-note-yellow: 250, 240, 208;
-    --sticky-note-green: 208, 240, 223;
-    --sticky-note-cyan: 208, 240, 240;
-    --sticky-note-blue: 208, 227, 250;
-    --sticky-note-purple: 231, 223, 250;
-    --sticky-note-pink: 245, 218, 231;
-}
-
 .sticky-note-button {
-    --icon-color: var(--color-base-100);
-    --icon-color-hover: var(--color-base-100);
+	--icon-color: var(--color-base-100);
+	--icon-color-hover: var(--color-base-100);
 }
+
+.color-menu {
+	row-gap: 4px;
+}
+
+.color-menu-item:hover {
+	font-weight: 500;
+}
+
+/* Settings */
 
 .disabled-setting {
     opacity: 50%;
 }
     
-.color-menu {
-    row-gap: 4px;
+.bg-color-settings {
+    flex-direction: column;
+    align-items: start;
+    gap: 6px;
+    padding: 0px;
+    border-top: none;
 }
 
-.color-menu-item:hover {
-    font-weight: 500;
+.bg-color-settings > * {
+  width: 100%;
 }
 
-.sticky-note-text-red {
-    background-color: rgb(var(--sticky-note-red));
+.single-color-setting .setting-item-control {
+    justify-content: stretch;
+    gap: 16px;
 }
 
-.sticky-note-text-orange {
-    background-color: rgb(var(--sticky-note-orange));
-}
-
-.sticky-note-text-yellow {
-    background-color: rgb(var(--sticky-note-yellow));
-}
-
-.sticky-note-text-green {
-    background-color: rgb(var(--sticky-note-green));
-}
-
-.sticky-note-text-cyan {
-    background-color: rgb(var(--sticky-note-cyan));
-}
-
-.sticky-note-text-blue {
-    background-color: rgb(var(--sticky-note-blue));
-}
-
-.sticky-note-text-purple {
-    background-color: rgb(var(--sticky-note-purple));
-}
-
-.sticky-note-text-pink {
-    background-color: rgb(var(--sticky-note-pink));
+.single-color-setting .setting-item-info {
+    display: none;
 }
