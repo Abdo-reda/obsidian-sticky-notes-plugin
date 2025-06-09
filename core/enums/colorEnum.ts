@@ -1,5 +1,5 @@
 export enum Colors {
-	DEFAULT = "Default",
+	BASE = "Base",
 	RED = "Red",
 	ORANGE = "Orange",
 	YELLOW = "Yellow",

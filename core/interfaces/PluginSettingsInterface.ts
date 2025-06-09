@@ -1,5 +1,6 @@
-import { Colors } from "core/enums/colorEnum";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
+import { IBackgroundColor } from "./BackgroundColorInterface";
+import { DEFAULT_COLORS } from "core/constants/defaultColorSettings";
 
 const DEFAULT_WIDTH = 300;
 const DEFAULT_HEIGHT = 300;
@@ -8,18 +9,14 @@ export interface IPluginSettings {
 	sizeOption: SizeOptions;
 	dimensions: string;
 	resizable: boolean;
-    defaultColor: Colors;
+	rememberBgColors: boolean;
+	bgColors: IBackgroundColor[];
 }
-
-// - colors
-// - defualt color
-// - default size
-// - enable resize
-// - memorize sticky ntoes
 
 export const DEFAULT_SETTINGS: IPluginSettings = {
 	sizeOption: SizeOptions.DEFAULT,
 	dimensions: `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`,
 	resizable: false,
-	defaultColor: Colors.DEFAULT,
+    rememberBgColors: false,
+	bgColors: structuredClone(DEFAULT_COLORS)
 };
