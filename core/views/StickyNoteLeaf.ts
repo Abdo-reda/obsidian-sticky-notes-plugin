@@ -11,14 +11,15 @@ import {
 import { BrowserWindow } from "@electron/remote";
 import { ColorMenu } from "core/menus/colorMenu";
 import { LoggingService } from "core/services/LogginService";
-import { SettingService } from "core/services/SettingService";
+import { type SettingService } from "core/services/SettingService";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
-import StickyNotesPlugin from "main";
+import { type MarkdownService } from "core/services/MarkdownService";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
 	public static leafsList = new Set<StickyNoteLeaf>();
 	private settingService: SettingService;
+	private markdownService: MarkdownService;
 
 	id: number;
 	leaf: WorkspaceLeaf;
@@ -26,19 +27,15 @@ export class StickyNoteLeaf {
 	document: Document;
 	mainWindow: Electron.BrowserWindow | undefined;
 	colorMenu: ColorMenu;
-	plugin: StickyNotesPlugin;
-	file: TFile;
 
 	constructor(
 		leaf: WorkspaceLeaf,
 		settingService: SettingService,
-		plugin: StickyNotesPlugin,
-		file: TFile
+        markdownService: MarkdownService,
 	) {
-		this.leaf = leaf;
-		this.plugin = plugin;
-		this.file = file;
 		this.settingService = settingService;
+        this.markdownService = markdownService;
+		this.leaf = leaf;
 		this.view = leaf.view;
 		this.document = this.leaf.getContainer().win.activeDocument;
 		this.id = StickyNoteLeaf.stickyNoteId;
@@ -54,14 +51,14 @@ export class StickyNoteLeaf {
 		LoggingService.info(`Init Sticky Note ${this.id} ...`);
 		this.document.title = this.title;
 		this.document.documentElement.setAttribute("note-id", this.title);
-		this.initColorMenu();
+		this.initColorMenu(file);
 		this.initView();
 		this.initMainWindow();
 		if (file) await this.leaf.openFile(file);
 	}
 
 	initView() {
-		LoggingService.info("Updating Sticky Note view");
+		LoggingService.info("Initializing Sticky Note view ...");
 		this.view = this.leaf.view;
 		this.removeDefaultActionsMenu();
 		this.removeHeader();
@@ -158,44 +155,36 @@ export class StickyNoteLeaf {
 		setTooltip(pinButton, isPinned ? "UnPin" : "Pin");
 	}
 
-	private initColorMenu() {
+	private initColorMenu(file: TFile | null = null) {
 		this.colorMenu = new ColorMenu(
 			this.document.body,
-			this.settingService,
-			this.file,
-			this.plugin
+            this.settingService.settings.bgColors,
+            this.settingService.settings.rememberBgColors,
+            this.markdownService.updateFrontmatterAsync.bind(this.markdownService),
 		);
-		this.setbgColors();
+        this.setDefaultColor(file);
 	}
 
-	private setbgColors() {
-		const frontmatter = this.plugin.app.metadataCache.getFileCache(
-			this.file
-		)?.frontmatter;
-		console.log("Frontmatter", frontmatter);
-
-		const bgColors = this.settingService.settings.bgColors;
-
-		let selectedColor = bgColors.find((color) => color.order === 1)?.color;
-
-		if (frontmatter) {
-			for (const color of bgColors) {
-				const { property, value } = color;
-
-				if (
-					(Array.isArray(frontmatter[property]) &&
-						frontmatter[property].includes(value)) ||
-					frontmatter[property] === value
-				) {
-					selectedColor = color.color;
-					break;
-				}
-			}
-		}
-
-		selectedColor = selectedColor || "";
+	private async setDefaultColor(file: TFile | null = null) {
+        const rememberColors = this.settingService.settings.rememberBgColors;
+        let defaultColor = this.settingService.settings.bgColors.find(bg => bg.isDefault);
+        if (rememberColors) {
+            const frontMatter = await this.markdownService.getFrontmatterAsync(file);
+            for (const [property, value] of Object.entries(frontMatter)) {
+                defaultColor = this.settingService.settings.bgColors.find(bg => bg.property === property && bg.value === value) ?? defaultColor;
+            }
+        }
+        if (!defaultColor) {
+            LoggingService.warn("No default color found ...")
+            return;
+        }
 		this.document.body.setCssProps({
-			"--background-primary": selectedColor,
+			"--background-primary": defaultColor.lightColor,
 		});
+        if (rememberColors) {
+            this.markdownService.updateFrontmatterAsync(file, {
+                [defaultColor.property]: defaultColor.value
+            })
+        }
 	}
 }

@@ -1,18 +1,27 @@
 import { Menu, Plugin, TFile, WorkspaceLeaf, setTooltip } from "obsidian";
-
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
 import { LoggingService } from "core/services/LogginService";
 import { SettingService } from "core/services/SettingService";
 import { StickyNoteLeaf } from "core/views/StickyNoteLeaf";
 import { StickyNotesSettingsTab } from "core/views/StickyNotesSettingsTab";
+import { MarkdownService } from "core/services/MarkdownService";
+
+//TODO:
+    //- enable memorization (frontmatter properties) to memorize sticky notes colors
+    //- copy the enhanced themed colors from one of the forks.
+    //- remove the color picker.js (no need for it.)
+    //- check if we need sortable js.
+    //- update the logic and clean it up, bit by bit.
 
 export default class StickyNotesPlugin extends Plugin {
+    markdownService: MarkdownService;
 	settingsManager: SettingService;
 	globalSettings: IPluginSettings;
 
 	async onload() {
-		LoggingService.disable();
+		LoggingService.enable();
 		LoggingService.info("Sticky Notes : plugin loading....");
+        this.addServices();
 		this.addSettings();
 		this.addStickyNoteRibbonAction();
 		this.addStickyNoteCommand();
@@ -76,6 +85,10 @@ export default class StickyNotesPlugin extends Plugin {
 		});
 	}
 
+    private addServices() {
+		this.markdownService = new MarkdownService(this);
+	}
+
 	private async addSettings() {
 		this.settingsManager = new SettingService(this);
 		await this.settingsManager.initSettings();
@@ -86,7 +99,7 @@ export default class StickyNotesPlugin extends Plugin {
 
 	// private addPopoutClosedListner() {
 	// 	const closeEvent = this.app.workspace.on('window-close', (win: WorkspaceWindow, window: Window) => {
-	// 		const noteId = win.doc.documentElement.getAttribute('note-id');
+	// 		const noteId = win.doc.documentElement.6Attribute('note-id');
 	// 		if (noteId) {
 	// 			StickyNoteManager.removeBrowserWindow(noteId);
 	// 		}
@@ -112,10 +125,6 @@ export default class StickyNotesPlugin extends Plugin {
 	private async openStickyNotePopup(file: TFile | null = null) {
 		LoggingService.info("Opened Sticky Note Popup");
 		file = file ?? this.app.workspace.getActiveFile();
-		if (!(file instanceof TFile)) {
-			LoggingService.warn("No file is active to open a sticky note");
-			return;
-		}
 		const popoutLeaf = this.app.workspace.openPopoutLeaf({
 			size: {
 				height: 300,
@@ -125,8 +134,7 @@ export default class StickyNotesPlugin extends Plugin {
 		const stickNoteLeaf = new StickyNoteLeaf(
 			popoutLeaf,
 			this.settingsManager,
-			this,
-			file
+            this.markdownService,
 		);
 		await stickNoteLeaf.initStickyNote(file);
 	}

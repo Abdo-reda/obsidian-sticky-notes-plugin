@@ -25,12 +25,6 @@
 	--icon-color-hover: var(--color-base-100);
 }
 
-
-.disabled-setting {
-    opacity: 50%;
-}
-    
-
 .color-menu {
 	row-gap: 4px;
 }
@@ -39,89 +33,29 @@
 	font-weight: 500;
 }
 
-.sticky-note-text-red {
-	background-color: rgb(var(--sticky-note-red));
+/* Settings */
+
+.disabled-setting {
+    opacity: 50%;
+}
+    
+.bg-color-settings {
+    flex-direction: column;
+    align-items: start;
+    gap: 6px;
+    padding: 0px;
+    border-top: none;
 }
 
-.sticky-note-text-orange {
-	background-color: rgb(var(--sticky-note-orange));
+.bg-color-settings > * {
+  width: 100%;
 }
 
-.sticky-note-text-yellow {
-	background-color: rgb(var(--sticky-note-yellow));
+.single-color-setting .setting-item-control {
+    justify-content: stretch;
+    gap: 16px;
 }
 
-.sticky-note-text-green {
-	background-color: rgb(var(--sticky-note-green));
-}
-
-.sticky-note-text-cyan {
-	background-color: rgb(var(--sticky-note-cyan));
-}
-
-.sticky-note-text-blue {
-	background-color: rgb(var(--sticky-note-blue));
-}
-
-.sticky-note-text-purple {
-	background-color: rgb(var(--sticky-note-purple));
-}
-
-.sticky-note-text-pink {
-	background-color: rgb(var(--sticky-note-pink));
-}
-
-
-/* Settings Tab */
-
-.BgColorSettingContainer {
-	display: flex;
-	flex-direction: column;
-}
-
-.BgColorSettingContainer .sticky-note-bg-color-container-tag-row {
-	display: flex;
-	align-items: center;
-	border-radius: 5px;
-	margin-block: 2px;
-}
-
-.sticky-note-bg-color-container-tag-row-element {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	width: 100%;
-	padding: 0 !important;
-}
-
-.BgColorSettingContainer .setting-item-control {
-	display: flex;
-	align-items: center;
-	width: 100%;
-	padding-block: 5px;
-}
-
-.sticky-note-sortable-fallback {
-	cursor: grabbing;
-	box-shadow: 0px 3px 32px rgb(31 38 135 / 15%);
-}
-
-.sticky-note-sortable-grab {
-	cursor: grabbing !important;
-}
-
-.sticky-note-sortable-ghost {
-	opacity: 0.4;
-	cursor: grabbing;
-}
-
-.sticky-note-sortable-chosen {
-	cursor: grabbing;
-	padding: 0 0 0 18px;
-	background-color: var(--background-primary);
-}
-
-.sticky-note-sortable-drag {
-	cursor: grabbing;
-	box-shadow: 0px 3px 32px rgb(31 38 135 / 15%);
+.single-color-setting .setting-item-info {
+    display: none;
 }

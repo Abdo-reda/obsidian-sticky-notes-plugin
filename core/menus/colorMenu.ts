@@ -1,36 +1,31 @@
 import { Menu, MenuItem } from "obsidian";
-import {
-	readDataOfVaultFiles,
-	writeDataToVaultFiles,
-} from "core/services/MarkdownFileOperations";
-
-import { BgColor } from "core/interfaces/PluginSettingsInterface";
-import { SettingService } from "core/services/SettingService";
-import StickyNotesPlugin from "main";
-import { TFile } from "obsidian";
-import { getColorTextClass } from "core/constants/colors";
+import { type TFile } from "obsidian";
+import { IBackgroundColor } from "core/interfaces/BackgroundColorInterface";
 
 export class ColorMenu extends Menu {
 	body: HTMLElement;
 	items: MenuItem[] = [];
-	tempState = false;
-	bgColors: BgColor[];
-	settingService: SettingService;
-	plugin: StickyNotesPlugin;
-	file: TFile;
+	bgColors: IBackgroundColor[];
+	rememberColors: boolean;
+	updateFrontMatter: (
+		file: TFile | null,
+		updates: Record<string, string>
+	) => Promise<boolean>;
 
 	constructor(
 		body: HTMLElement,
-		settingService: SettingService,
-		file: TFile,
-		plugin: StickyNotesPlugin
+		bgColors: IBackgroundColor[],
+		rememberColors: boolean,
+		updateFrontMatter: (
+			file: TFile | null,
+			updates: Record<string, string>
+		) => Promise<boolean>
 	) {
 		super();
 		this.body = body;
-		this.bgColors = settingService.settings.bgColors;
-		this.settingService = settingService;
-		this.file = file;
-		this.plugin = plugin;
+		this.bgColors = bgColors;
+		this.rememberColors = rememberColors;
+		this.updateFrontMatter = updateFrontMatter;
 		this.addColorItems();
 	}
 
@@ -38,58 +33,37 @@ export class ColorMenu extends Menu {
 		for (const color of this.bgColors) {
 			this.addItem((item) =>
 				this.items.push(
-					item.setTitle(color.value).onClick(() => {
-						this.body.setCssProps({
-							"--background-primary": color.color,
-						});
-						this.updateFrontmatter(color);
-					})
+					item
+						.setTitle(color.value)
+						.setIcon("circle")
+						.onClick(() => {
+							this.body.setCssProps({
+								"--background-primary": color.lightColor,
+							});
+							if (this.rememberColors) {
+								this.updateFrontMatter(null, {
+									[color.property]: color.value,
+								});
+							}
+						})
 				)
 			);
 		}
 	}
 
-	async updateFrontmatter(selectedColor: { color: string; value: string }) {
-		const filePath = this.file.path;
-		const fileContent = await readDataOfVaultFiles(this.plugin, filePath);
-
-		const frontmatterMatch = fileContent.match(/^---\n([\s\S]*?)\n---/);
-		console.log("Frontmatter matched from regex", frontmatterMatch);
-		let newFrontmatter = "";
-		let restOfFile = fileContent;
-
-		const colorProperty = this.settingService.settings.bgColors.find(
-			(color) => color.color === selectedColor.color
-		)?.property;
-
-		if (colorProperty) {
-			if (frontmatterMatch) {
-				const rawFrontmatter = frontmatterMatch[1];
-				const frontmatterLines = rawFrontmatter.split("\n");
-				let propertyFound = false;
-
-				newFrontmatter = frontmatterLines
-					.map((line: string) => {
-						if (line.startsWith(`${colorProperty}:`)) {
-							propertyFound = true;
-							return `${colorProperty}: ${selectedColor.value}`;
-						}
-						return line;
-					})
-					.join("\n");
-
-				if (!propertyFound) {
-					newFrontmatter += `\n${colorProperty}: ${selectedColor.value}`;
-				}
-
-				newFrontmatter = `---\n${newFrontmatter}\n---`;
-				restOfFile = fileContent.slice(frontmatterMatch[0].length);
-			} else {
-				newFrontmatter = `---\n${colorProperty}: ${selectedColor.value}\n---`;
+	override onload(): void {
+		super.onload();
+		const menuContainer = this.body.querySelector(".menu-scroll");
+		if (!menuContainer) return;
+		menuContainer.addClass("color-menu");
+		for (let i = 0; i < menuContainer.children.length; i++) {
+			const itemMenu = menuContainer.children.item(i) as HTMLElement;
+			itemMenu?.addClass("color-menu-item");
+			const itemIcon = itemMenu?.querySelector("svg");
+			if (itemIcon) {
+				itemIcon.style.color = this.bgColors[i].lightColor;
+				itemIcon.style.fill = this.bgColors[i].lightColor;
 			}
-
-			const newContent = `${newFrontmatter}${restOfFile}`;
-			await writeDataToVaultFiles(this.plugin, filePath, newContent);
 		}
 	}
 }
