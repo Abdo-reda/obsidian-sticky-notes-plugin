@@ -92,7 +92,7 @@ export default class StickyNotesPlugin extends Plugin {
 
 	// private addPopoutClosedListner() {
 	// 	const closeEvent = this.app.workspace.on('window-close', (win: WorkspaceWindow, window: Window) => {
-	// 		const noteId = win.doc.documentElement.6Attribute('note-id');
+	// 		const noteId = win.doc.documentElement.getAttribute('note-id');
 	// 		if (noteId) {
 	// 			StickyNoteManager.removeBrowserWindow(noteId);
 	// 		}
