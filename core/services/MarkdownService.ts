@@ -8,7 +8,7 @@ export class MarkdownService {
 	constructor(plugin: StickyNotesPlugin) {
 		this.plugin = plugin;
 	}
-
+    
 	async getFrontmatterAsync(
 		file: TFile | null = null
 	): Promise<Record<string, string>> {

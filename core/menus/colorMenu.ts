@@ -1,6 +1,7 @@
 import { Menu, MenuItem } from "obsidian";
 import { type TFile } from "obsidian";
 import { IBackgroundColor } from "core/interfaces/BackgroundColorInterface";
+import { isLightTheme } from "core/utils/colorUtils";
 
 export class ColorMenu extends Menu {
 	body: HTMLElement;
@@ -38,7 +39,7 @@ export class ColorMenu extends Menu {
 						.setIcon("circle")
 						.onClick(() => {
 							this.body.setCssProps({
-								"--background-primary": color.lightColor,
+								"--background-primary": isLightTheme() ? color.lightColor : color.darkColor,
 							});
 							if (this.rememberColors) {
 								this.updateFrontMatter(null, {
@@ -61,8 +62,9 @@ export class ColorMenu extends Menu {
 			itemMenu?.addClass("color-menu-item");
 			const itemIcon = itemMenu?.querySelector("svg");
 			if (itemIcon) {
-				itemIcon.style.color = this.bgColors[i].lightColor;
-				itemIcon.style.fill = this.bgColors[i].lightColor;
+                const curColor = isLightTheme() ? this.bgColors[i].lightColor : this.bgColors[i].darkColor;
+				itemIcon.style.color = curColor;
+				itemIcon.style.fill = curColor;
 			}
 		}
 	}

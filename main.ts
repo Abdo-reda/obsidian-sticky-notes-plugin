@@ -6,20 +6,13 @@ import { StickyNoteLeaf } from "core/views/StickyNoteLeaf";
 import { StickyNotesSettingsTab } from "core/views/StickyNotesSettingsTab";
 import { MarkdownService } from "core/services/MarkdownService";
 
-//TODO:
-    //- enable memorization (frontmatter properties) to memorize sticky notes colors
-    //- copy the enhanced themed colors from one of the forks.
-    //- remove the color picker.js (no need for it.)
-    //- check if we need sortable js.
-    //- update the logic and clean it up, bit by bit.
-
 export default class StickyNotesPlugin extends Plugin {
     markdownService: MarkdownService;
 	settingsManager: SettingService;
 	globalSettings: IPluginSettings;
 
 	async onload() {
-		LoggingService.enable();
+		LoggingService.disable();
 		LoggingService.info("Sticky Notes : plugin loading....");
         this.addServices();
 		this.addSettings();

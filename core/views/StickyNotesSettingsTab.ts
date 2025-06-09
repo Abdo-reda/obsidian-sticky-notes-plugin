@@ -15,7 +15,7 @@ import {
 	DEFAULT_COLORS,
 } from "core/constants/defaultColorSettings";
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
-import { getRandomHexColor } from "core/utils/colorUtils";
+import { getRandomHexColor, isLightTheme } from "core/utils/colorUtils";
 
 export class StickyNotesSettingsTab extends PluginSettingTab {
 	settingService: SettingService;
@@ -218,8 +218,12 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		const colorSetting = new Setting(ele)
 			.setClass("single-color-setting")
 			.addColorPicker((c) =>
-				c.setValue(bg.lightColor).onChange((v) => {
-					bg.lightColor = v;
+				c.setValue(isLightTheme() ? bg.lightColor :  bg.darkColor).onChange((v) => {
+					if (isLightTheme()) {
+                        bg.lightColor = v;
+                    } else {
+                        bg.darkColor = v;
+                    }
 					this.settingService.updateSettings({});
 				})
 			);

@@ -1,7 +1,5 @@
 export enum Colors {
-	DEFAULT = "Default",
-	BLACK = "Black",
-	WHITE = "White",
+	BASE = "Base",
 	RED = "Red",
 	ORANGE = "Orange",
 	YELLOW = "Yellow",

@@ -14,6 +14,7 @@ import { LoggingService } from "core/services/LogginService";
 import { type SettingService } from "core/services/SettingService";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
 import { type MarkdownService } from "core/services/MarkdownService";
+import { isLightTheme } from "core/utils/colorUtils";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
@@ -179,7 +180,7 @@ export class StickyNoteLeaf {
             return;
         }
 		this.document.body.setCssProps({
-			"--background-primary": defaultColor.lightColor,
+			"--background-primary": isLightTheme() ? defaultColor.lightColor : defaultColor.darkColor,
 		});
         if (rememberColors) {
             this.markdownService.updateFrontmatterAsync(file, {
