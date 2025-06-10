@@ -232,6 +232,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 
 		if (rememberColors) {
             //TODO: add a suggestion box / autocomplete
+            //https://docs.obsidian.md/Reference/TypeScript+API/AbstractInputSuggest
 			colorSetting.addText((propertyKey) =>
 				propertyKey
 					.setPlaceholder("property key")
