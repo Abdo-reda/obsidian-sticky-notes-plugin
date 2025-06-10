@@ -39,7 +39,8 @@ export class ColorMenu extends Menu {
 						.setIcon("circle")
 						.onClick(() => {
 							this.body.setCssProps({
-								"--background-primary": isLightTheme() ? color.lightColor : color.darkColor,
+								"--note-light-color": color.lightColor,
+								"--note-dark-color": color.darkColor,
 							});
 							if (this.rememberColors) {
 								this.updateFrontMatter(null, {
