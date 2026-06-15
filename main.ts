@@ -7,9 +7,9 @@ import { StickyNotesSettingsTab } from "core/views/StickyNotesSettingsTab";
 import { MarkdownService } from "core/services/MarkdownService";
 
 export default class StickyNotesPlugin extends Plugin {
-    markdownService: MarkdownService;
-	settingsManager: SettingService;
-	globalSettings: IPluginSettings;
+    markdownService!: MarkdownService;
+	settingsManager!: SettingService;
+	globalSettings!: IPluginSettings;
 
 	async onload() {
 		LoggingService.disable();

@@ -7,7 +7,7 @@ import type StickyNotesPlugin from "main";
 
 export class SettingService {
 	plugin: StickyNotesPlugin;
-	private _settings: IPluginSettings;
+	private _settings!: IPluginSettings;
 
 	constructor(plugin: StickyNotesPlugin) {
 		this.plugin = plugin;

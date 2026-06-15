@@ -12,19 +12,21 @@ import { LoggingService } from "core/services/LogginService";
 import { type SettingService } from "core/services/SettingService";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
 import { type MarkdownService } from "core/services/MarkdownService";
+import { PinOptions } from "core/enums/pinOptionEnum";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
 	public static leafsList = new Set<StickyNoteLeaf>();
 	private settingService: SettingService;
 	private markdownService: MarkdownService;
-
+	
 	id: number;
 	leaf: WorkspaceLeaf;
 	view: View;
 	document: Document;
 	mainWindow: Electron.BrowserWindow | undefined;
 	colorMenu: ColorMenu | undefined;
+	private static lastNotePinnedState = true;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -87,7 +89,10 @@ export class StickyNoteLeaf {
 			this.mainWindow.on("resize", () => this.saveDimensions());
 		}
 
-		this.pinAction(true);
+		let isPinned = StickyNoteLeaf.lastNotePinnedState;
+		if (this.settingService.settings.pinOption === PinOptions.ALWAYS) isPinned = true;
+		else if (this.settingService.settings.pinOption === PinOptions.NEVER) isPinned = false;
+		this.pinAction(isPinned);
 	}
 
 	private saveDimensions() {
@@ -152,6 +157,7 @@ export class StickyNoteLeaf {
 		if (!pinButton) return;
 		setIcon(pinButton, isPinned ? "pin-off" : "pin");
 		setTooltip(pinButton, isPinned ? "UnPin" : "Pin");
+		StickyNoteLeaf.lastNotePinnedState = isPinned;
 	}
 
 	private initColorMenu(file: TFile | null = null) {

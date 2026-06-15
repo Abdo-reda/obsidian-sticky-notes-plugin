@@ -16,6 +16,7 @@ import {
 } from "core/constants/defaultColorSettings";
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
 import { getRandomHexColor, isLightTheme } from "core/utils/colorUtils";
+import { PinOptions } from "core/enums/pinOptionEnum";
 
 export class StickyNotesSettingsTab extends PluginSettingTab {
 	settingService: SettingService;
@@ -41,6 +42,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 			return;
 		}
 
+		this.addGeneralSettings();
 		this.addSizeSettings();
 		this.addColorSettings();
 		return;
@@ -54,6 +56,13 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 	updateAndRerenderSettings(updatedSettings: Partial<IPluginSettings>) {
 		this.settingService.updateSettings(updatedSettings);
 		this.rerenderSettings();
+	}
+
+	addGeneralSettings() {
+		new Setting(this.containerEl)
+			.setName("General")
+			.setHeading();
+		this.addPinSetting(this.containerEl);
 	}
 
 	addSizeSettings() {
@@ -122,6 +131,29 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 
 				return this.dimensionsSettingComponent;
 			});
+	}
+
+	addPinSetting(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("Default pin mode")
+			.setDesc("Select the default Pin mode when a sticky note is created.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions(
+						Object.fromEntries(
+							Object.values(PinOptions).map((value) => [
+								value,
+								value,
+							])
+						)
+					)
+					.setValue(this.settingService.settings.pinOption)
+					.onChange(async (value) => {
+						this.updateAndRerenderSettings({
+							pinOption: value as PinOptions,
+						});
+					})
+			)
 	}
 
 	addResizableSetting(ele: HTMLElement) {
