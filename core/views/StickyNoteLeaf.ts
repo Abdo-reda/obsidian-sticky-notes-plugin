@@ -6,14 +6,12 @@ import {
 	setIcon,
 	setTooltip,
 } from "obsidian";
-
 import { BrowserWindow } from "@electron/remote";
 import { ColorMenu } from "core/menus/colorMenu";
 import { LoggingService } from "core/services/LogginService";
 import { type SettingService } from "core/services/SettingService";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
 import { type MarkdownService } from "core/services/MarkdownService";
-import { isLightTheme } from "core/utils/colorUtils";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
@@ -51,7 +49,6 @@ export class StickyNoteLeaf {
 		LoggingService.info(`Init Sticky Note ${this.id} ...`);
 		this.document.title = this.title;
 		this.document.documentElement.setAttribute("note-id", this.title);
-		this.document.documentElement.addClass("sticky-note");
 		this.initColorMenu(file);
 		this.initView();
 		this.initMainWindow();
@@ -61,6 +58,7 @@ export class StickyNoteLeaf {
 	initView() {
 		LoggingService.info("Initializing Sticky Note view ...");
 		this.view = this.leaf.view;
+		this.addNoteContainerClass();
 		this.removeDefaultActionsMenu();
 		this.removeHeader();
 		this.addStickyNoteActions();
@@ -98,6 +96,13 @@ export class StickyNoteLeaf {
 		this.settingService.updateWindowDimensions(width, height);
 	}
 
+	private addNoteContainerClass() {
+		const appContainerEl =
+			this.document.body.querySelector(".app-container");
+		if (!appContainerEl) return;
+		appContainerEl.addClass("sticky-note");
+	}
+
 	private removeDefaultActionsMenu() {
 		const actionsEl = this.view.containerEl.querySelector(".view-actions");
 		const leftActionsEl =
@@ -129,7 +134,7 @@ export class StickyNoteLeaf {
 				"Pin",
 				() => this.pinAction(),
 			)
-			.addClasses(["pinButton", "sticky-note-button"]);
+			.addClasses(["pin-button", "sticky-note-button"]);
 		this.view
 			.addAction("palette", "Color", (event) =>
 				this.colorMenu?.showAtMouseEvent(event),
@@ -143,7 +148,7 @@ export class StickyNoteLeaf {
 			pin !== undefined ? pin : !this.mainWindow.isAlwaysOnTop();
 		this.mainWindow.setAlwaysOnTop(isPinned);
 		const pinButton =
-			this.view.containerEl.querySelector<HTMLElement>(".pinButton");
+			this.view.containerEl.querySelector<HTMLElement>(".pin-button");
 		if (!pinButton) return;
 		setIcon(pinButton, isPinned ? "pin-off" : "pin");
 		setTooltip(pinButton, isPinned ? "UnPin" : "Pin");
@@ -181,9 +186,8 @@ export class StickyNoteLeaf {
 			return;
 		}
 		this.document.body.setCssProps({
-			"--background-primary": isLightTheme()
-				? defaultColor.lightColor
-				: defaultColor.darkColor,
+			"--note-light-color": defaultColor.lightColor,
+			"--note-dark-color": defaultColor.darkColor,
 		});
 		if (rememberColors) {
 			this.markdownService.updateFrontmatterAsync(file, {
