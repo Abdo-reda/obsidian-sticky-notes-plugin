@@ -37,3 +37,12 @@
 .single-color-setting .setting-item-info {
     display: none;
 }
+
+/* Conflicts with other Plugins */
+.sticky-note .daily-note-navbar {
+	display: none;
+}
+
+.sticky-note .view-header-title {
+	display: flex;
+} 

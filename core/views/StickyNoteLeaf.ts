@@ -52,6 +52,7 @@ export class StickyNoteLeaf {
 		LoggingService.info(`Init Sticky Note ${this.id} ...`);
 		this.document.title = this.title;
 		this.document.documentElement.setAttribute("note-id", this.title);
+		this.document.documentElement.addClass("sticky-note");
 		this.initColorMenu(file);
 		this.initView();
 		this.initMainWindow();
