@@ -40,7 +40,7 @@ export default class StickyNotesPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: "destroy-sticky-note-views",
-			name: "Destroy all sticky notes",
+			name: "Destroy all",
 			icon: "copy-x",
 			callback: () => this.destroyAllStickyNotes(),
 		});
@@ -64,7 +64,7 @@ export default class StickyNotesPlugin extends Plugin {
 		);
 		const editorMenuEvent = this.app.workspace.on(
 			"editor-menu",
-			(menu, editor, view) => this.addStickyNoteMenuItem(menu, view.file)
+			(menu, _editor, view) => this.addStickyNoteMenuItem(menu, view.file)
 		);
 		this.registerEvent(fileMenuEvent);
 		this.registerEvent(editorMenuEvent);

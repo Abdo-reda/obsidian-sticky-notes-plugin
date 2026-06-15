@@ -1,6 +1,5 @@
 import {
 	ItemView,
-	Menu,
 	TFile,
 	View,
 	WorkspaceLeaf,
@@ -27,15 +26,15 @@ export class StickyNoteLeaf {
 	view: View;
 	document: Document;
 	mainWindow: Electron.BrowserWindow | undefined;
-	colorMenu: ColorMenu;
+	colorMenu: ColorMenu | undefined;
 
 	constructor(
 		leaf: WorkspaceLeaf,
 		settingService: SettingService,
-        markdownService: MarkdownService,
+		markdownService: MarkdownService,
 	) {
 		this.settingService = settingService;
-        this.markdownService = markdownService;
+		this.markdownService = markdownService;
 		this.leaf = leaf;
 		this.view = leaf.view;
 		this.document = this.leaf.getContainer().win.activeDocument;
@@ -72,7 +71,7 @@ export class StickyNoteLeaf {
 		const mainWindow = windows.find((w) => w.title === this.title);
 		if (!mainWindow) {
 			LoggingService.warn(
-				`Sticky note ${this.title} does not have an electron window`
+				`Sticky note ${this.title} does not have an electron window`,
 			);
 			return;
 		}
@@ -94,7 +93,7 @@ export class StickyNoteLeaf {
 	}
 
 	private saveDimensions() {
-		if (!this.mainWindow) return;
+		if (!this.mainWindow || this.mainWindow.isDestroyed()) return;
 		const [width, height] = this.mainWindow.getSize();
 		this.settingService.updateWindowDimensions(width, height);
 	}
@@ -109,7 +108,7 @@ export class StickyNoteLeaf {
 
 	private removeHeader() {
 		const headerEl = this.document.querySelector(
-			".workspace-tab-header-container"
+			".workspace-tab-header-container",
 		);
 		const titleEl = this.document.querySelector(".titlebar");
 		headerEl?.remove();
@@ -118,13 +117,6 @@ export class StickyNoteLeaf {
 
 	private addStickyNoteActions() {
 		if (!(this.view instanceof ItemView)) return;
-		const headerContainerEl = this.document.querySelector<HTMLElement>(
-			".view-header-title-container"
-		);
-		headerContainerEl?.setCssProps({
-			"app-region": "drag",
-			"-webkit-app-region": "drag",
-		});
 		this.view
 			.addAction("x", "Close", () => this.leaf.detach())
 			.addClass("sticky-note-button");
@@ -135,12 +127,12 @@ export class StickyNoteLeaf {
 			.addAction(
 				this.mainWindow?.isAlwaysOnTop() ? "pin-off" : "pin",
 				"Pin",
-				() => this.pinAction()
+				() => this.pinAction(),
 			)
 			.addClasses(["pinButton", "sticky-note-button"]);
 		this.view
 			.addAction("palette", "Color", (event) =>
-				this.colorMenu.showAtMouseEvent(event)
+				this.colorMenu?.showAtMouseEvent(event),
 			)
 			.addClass("sticky-note-button");
 	}
@@ -160,33 +152,43 @@ export class StickyNoteLeaf {
 	private initColorMenu(file: TFile | null = null) {
 		this.colorMenu = new ColorMenu(
 			this.document.body,
-            this.settingService.settings.bgColors,
-            this.settingService.settings.rememberBgColors,
-            this.markdownService.updateFrontmatterAsync.bind(this.markdownService),
+			this.settingService.settings.bgColors,
+			this.settingService.settings.rememberBgColors,
+			this.markdownService.updateFrontmatterAsync.bind(
+				this.markdownService,
+			),
 		);
-        this.setDefaultColor(file);
+		this.setDefaultColor(file);
 	}
 
 	private async setDefaultColor(file: TFile | null = null) {
-        const rememberColors = this.settingService.settings.rememberBgColors;
-        let defaultColor = this.settingService.settings.bgColors.find(bg => bg.isDefault);
-        if (rememberColors) {
-            const frontMatter = await this.markdownService.getFrontmatterAsync(file);
-            for (const [property, value] of Object.entries(frontMatter)) {
-                defaultColor = this.settingService.settings.bgColors.find(bg => bg.property === property && bg.value === value) ?? defaultColor;
-            }
-        }
-        if (!defaultColor) {
-            LoggingService.warn("No default color found ...")
-            return;
-        }
+		const rememberColors = this.settingService.settings.rememberBgColors;
+		let defaultColor = this.settingService.settings.bgColors.find(
+			(bg) => bg.isDefault,
+		);
+		if (rememberColors) {
+			const frontMatter =
+				await this.markdownService.getFrontmatterAsync(file);
+			for (const [property, value] of Object.entries(frontMatter)) {
+				defaultColor =
+					this.settingService.settings.bgColors.find(
+						(bg) => bg.property === property && bg.value === value,
+					) ?? defaultColor;
+			}
+		}
+		if (!defaultColor) {
+			LoggingService.warn("No default color found ...");
+			return;
+		}
 		this.document.body.setCssProps({
-			"--background-primary": isLightTheme() ? defaultColor.lightColor : defaultColor.darkColor,
+			"--background-primary": isLightTheme()
+				? defaultColor.lightColor
+				: defaultColor.darkColor,
 		});
-        if (rememberColors) {
-            this.markdownService.updateFrontmatterAsync(file, {
-                [defaultColor.property]: defaultColor.value
-            })
-        }
+		if (rememberColors) {
+			this.markdownService.updateFrontmatterAsync(file, {
+				[defaultColor.property]: defaultColor.value,
+			});
+		}
 	}
 }

@@ -19,8 +19,8 @@ import { getRandomHexColor, isLightTheme } from "core/utils/colorUtils";
 
 export class StickyNotesSettingsTab extends PluginSettingTab {
 	settingService: SettingService;
-	dimensionsSettingComponent: TextComponent;
-	resizableSettingComponent: ToggleComponent;
+	dimensionsSettingComponent: TextComponent | undefined;
+	resizableSettingComponent: ToggleComponent | undefined;
 
 	constructor(
 		app: App,
@@ -43,6 +43,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 
 		this.addSizeSettings();
 		this.addColorSettings();
+		return;
 	}
 
 	rerenderSettings() {
@@ -56,7 +57,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 	}
 
 	addSizeSettings() {
-		const sizeSettings = new Setting(this.containerEl)
+		new Setting(this.containerEl)
 			.setName("Size")
 			.setHeading();
 		this.addDimensionSetting(this.containerEl);
@@ -302,7 +303,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		inputEl: HTMLElement,
 		value: boolean
 	): ValueComponent<T> {
-		settingComponent.setDisabled(value);
+		settingComponent.setDisabled(value); //might require obsidian 1.2.3...
 		if (value) {
 			inputEl.addClass("disabled-setting");
 		} else {
