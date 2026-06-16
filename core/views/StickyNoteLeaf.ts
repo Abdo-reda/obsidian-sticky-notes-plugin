@@ -89,6 +89,8 @@ export class StickyNoteLeaf {
 			this.mainWindow.on("resize", () => this.saveDimensions());
 		}
 
+		this.mainWindow.setSkipTaskbar(!this.settingService.settings.taskbarVisibility);
+
 		let isPinned = StickyNoteLeaf.lastNotePinnedState;
 		if (this.settingService.settings.pinOption === PinOptions.ALWAYS) isPinned = true;
 		else if (this.settingService.settings.pinOption === PinOptions.NEVER) isPinned = false;

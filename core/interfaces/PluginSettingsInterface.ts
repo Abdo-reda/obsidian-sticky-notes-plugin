@@ -7,6 +7,7 @@ const DEFAULT_WIDTH = 300;
 const DEFAULT_HEIGHT = 300;
 
 export interface IPluginSettings {
+	taskbarVisibility: boolean;
 	pinOption: PinOptions;
 	sizeOption: SizeOptions;
 	dimensions: string;
@@ -16,6 +17,7 @@ export interface IPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: IPluginSettings = {
+	taskbarVisibility: true,
 	pinOption: PinOptions.ALWAYS,
 	sizeOption: SizeOptions.DEFAULT,
 	dimensions: `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`,
