@@ -1,5 +1,7 @@
 import {
 	ItemView,
+	MarkdownView,
+	type MarkdownViewModeType,
 	TFile,
 	View,
 	WorkspaceLeaf,
@@ -19,7 +21,7 @@ export class StickyNoteLeaf {
 	public static leafsList = new Set<StickyNoteLeaf>();
 	private settingService: SettingService;
 	private markdownService: MarkdownService;
-	
+
 	id: number;
 	leaf: WorkspaceLeaf;
 	view: View;
@@ -89,12 +91,19 @@ export class StickyNoteLeaf {
 			this.mainWindow.on("resize", () => this.saveDimensions());
 		}
 
-		this.mainWindow.setSkipTaskbar(!this.settingService.settings.taskbarVisibility);
+		this.mainWindow.setSkipTaskbar(
+			!this.settingService.settings.taskbarVisibility,
+		);
 
 		let isPinned = StickyNoteLeaf.lastNotePinnedState;
-		if (this.settingService.settings.pinOption === PinOptions.ALWAYS) isPinned = true;
-		else if (this.settingService.settings.pinOption === PinOptions.NEVER) isPinned = false;
+		if (this.settingService.settings.pinOption === PinOptions.ALWAYS)
+			isPinned = true;
+		else if (this.settingService.settings.pinOption === PinOptions.NEVER)
+			isPinned = false;
 		this.pinAction(isPinned);
+
+		if (!(this.view instanceof MarkdownView)) return;
+		this.viewModeAction(this.view.getMode());
 	}
 
 	private saveDimensions() {
@@ -138,7 +147,7 @@ export class StickyNoteLeaf {
 		this.view
 			.addAction(
 				this.mainWindow?.isAlwaysOnTop() ? "pin-off" : "pin",
-				"Pin",
+				this.mainWindow?.isAlwaysOnTop() ? "UnPin" : "Pin",
 				() => this.pinAction(),
 			)
 			.addClasses(["pin-button", "sticky-note-button"]);
@@ -147,12 +156,20 @@ export class StickyNoteLeaf {
 				this.colorMenu?.showAtMouseEvent(event),
 			)
 			.addClass("sticky-note-button");
+
+		if (!(this.view instanceof MarkdownView)) return;
+		this.view
+			.addAction(
+				this.view.getMode() === "source" ? "book-open" : "pencil",
+				this.view.getMode() === "source" ? "Read mode" : "Edit mode",
+				() => this.viewModeAction(),
+			)
+			.addClasses(["view-mode-button", "sticky-note-button"]);
 	}
 
 	private pinAction(pin?: boolean) {
 		if (!this.mainWindow) return;
-		const isPinned =
-			pin !== undefined ? pin : !this.mainWindow.isAlwaysOnTop();
+		const isPinned = pin ?? !this.mainWindow.isAlwaysOnTop();
 		this.mainWindow.setAlwaysOnTop(isPinned);
 		const pinButton =
 			this.view.containerEl.querySelector<HTMLElement>(".pin-button");
@@ -160,6 +177,19 @@ export class StickyNoteLeaf {
 		setIcon(pinButton, isPinned ? "pin-off" : "pin");
 		setTooltip(pinButton, isPinned ? "UnPin" : "Pin");
 		StickyNoteLeaf.lastNotePinnedState = isPinned;
+	}
+
+	private viewModeAction(mode?: MarkdownViewModeType) {
+		if (!(this.view instanceof MarkdownView)) return;
+
+		const newMode = mode ?? (this.view.getMode() === "source" ? "preview" : "source");
+		this.view.setState({ mode: newMode }, { history: false });
+
+		const viewModeButton =
+			this.view.containerEl.querySelector<HTMLElement>(".view-mode-button");
+		if (!viewModeButton) return;
+		setIcon(viewModeButton, newMode == "source" ?  "book-open" : "pencil");
+		setTooltip(viewModeButton, newMode == "source" ? "Read mode" : "Edit mode");
 	}
 
 	private initColorMenu(file: TFile | null = null) {
