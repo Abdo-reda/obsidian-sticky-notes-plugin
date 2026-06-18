@@ -2,6 +2,7 @@ import {
 	ItemView,
 	MarkdownView,
 	type MarkdownViewModeType,
+	Platform,
 	TFile,
 	View,
 	WorkspaceLeaf,
@@ -140,12 +141,16 @@ export class StickyNoteLeaf {
 
 	private addStickyNoteActions() {
 		if (!(this.view instanceof ItemView)) return;
-		this.view
-			.addAction("x", "Close", () => this.leaf.detach())
-			.addClass("sticky-note-button");
-		this.view
-			.addAction("minus", "Minimize", () => this.mainWindow?.minimize())
-			.addClass("sticky-note-button");
+
+		if (!Platform.isMacOS) {
+			this.view
+				.addAction("x", "Close", () => this.leaf.detach())
+				.addClass("sticky-note-button");
+			this.view
+				.addAction("minus", "Minimize", () => this.mainWindow?.minimize())
+				.addClass("sticky-note-button");
+		}
+
 		this.view
 			.addAction(
 				this.mainWindow?.isAlwaysOnTop() ? "pin-off" : "pin",
