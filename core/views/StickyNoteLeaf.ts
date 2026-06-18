@@ -132,8 +132,10 @@ export class StickyNoteLeaf {
 			".workspace-tab-header-container",
 		);
 		const titleEl = this.document.querySelector(".titlebar");
+		const breadcrumbTitleEl = this.document.querySelector(".view-header-title-parent");  //Note: adding a tooltip with the path of the file will require removing the app-drag
 		headerEl?.remove();
 		titleEl?.empty();
+		breadcrumbTitleEl?.remove();
 	}
 
 	private addStickyNoteActions() {
