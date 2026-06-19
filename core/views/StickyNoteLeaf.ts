@@ -18,18 +18,21 @@ import { type MarkdownService } from "core/services/MarkdownService";
 import { PinOptions } from "core/enums/pinOptionEnum";
 import { IBackgroundColor } from "core/interfaces/BackgroundColorInterface";
 
+type StickyNoteSubLeaf = WorkspaceLeaf & { id: string };
+
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
-	public static leafsList = new Set<StickyNoteLeaf>();
+	public static leafsList = new Map<string, StickyNoteLeaf>();
 	private settingService: SettingService;
 	private markdownService: MarkdownService;
 
 	id: number;
-	leaf: WorkspaceLeaf;
+	leaf: StickyNoteSubLeaf;
 	view: View;
 	document: Document;
 	mainWindow: Electron.BrowserWindow | undefined;
 	colorMenu: ColorMenu | undefined;
+	init: boolean = false;
 	private static lastNotePinnedState = true;
 	public static lastNoteColor: IBackgroundColor | undefined;
 
@@ -40,12 +43,13 @@ export class StickyNoteLeaf {
 	) {
 		this.settingService = settingService;
 		this.markdownService = markdownService;
-		this.leaf = leaf;
+		this.leaf = leaf as StickyNoteSubLeaf;
 		this.view = leaf.view;
 		this.document = this.leaf.getContainer().win.activeDocument;
 		this.id = StickyNoteLeaf.stickyNoteId;
 		StickyNoteLeaf.stickyNoteId++;
-		StickyNoteLeaf.leafsList.add(this);
+		StickyNoteLeaf.leafsList.set(this.title, this);
+		this.settingService.updateWorkspaceNotes(StickyNoteLeaf.leafsList)
 	}
 
 	get title() {
@@ -57,17 +61,19 @@ export class StickyNoteLeaf {
 		this.document.title = this.title;
 		this.document.documentElement.setAttribute("note-id", this.title);
 		this.initColorMenu(file);
-		this.initView();
+		this.initView(false);
 		this.initMainWindow();
 		if (file) await this.leaf.openFile(file);
 	}
 
-	initView() {
+	initView(init: boolean) {
+		if (this.init) return;
 		LoggingService.info("Initializing Sticky Note view ...");
+		this.init = init;
 		this.view = this.leaf.view;
 		this.addNoteContainerClass();
-		this.removeDefaultActionsMenu();
 		this.removeHeader();
+		this.removeDefaultActionsMenu();
 		this.addStickyNoteActions();
 	}
 
@@ -135,7 +141,9 @@ export class StickyNoteLeaf {
 			".workspace-tab-header-container",
 		);
 		const titleEl = this.document.querySelector(".titlebar");
-		const breadcrumbTitleEl = this.document.querySelector(".view-header-title-parent");  //Note: adding a tooltip with the path of the file will require removing the app-drag
+		const breadcrumbTitleEl = this.document.querySelector(
+			".view-header-title-parent",
+		); //Note: adding a tooltip with the path of the file will require removing the app-drag
 		headerEl?.remove();
 		titleEl?.empty();
 		breadcrumbTitleEl?.remove();
@@ -149,7 +157,9 @@ export class StickyNoteLeaf {
 				.addAction("x", "Close", () => this.leaf.detach())
 				.addClass("sticky-note-button");
 			this.view
-				.addAction("minus", "Minimize", () => this.mainWindow?.minimize())
+				.addAction("minus", "Minimize", () =>
+					this.mainWindow?.minimize(),
+				)
 				.addClass("sticky-note-button");
 		}
 
@@ -191,14 +201,20 @@ export class StickyNoteLeaf {
 	private viewModeAction(mode?: MarkdownViewModeType) {
 		if (!(this.view instanceof MarkdownView)) return;
 
-		const newMode = mode ?? (this.view.getMode() === "source" ? "preview" : "source");
+		const newMode =
+			mode ?? (this.view.getMode() === "source" ? "preview" : "source");
 		this.view.setState({ mode: newMode }, { history: false });
 
 		const viewModeButton =
-			this.view.containerEl.querySelector<HTMLElement>(".view-mode-button");
+			this.view.containerEl.querySelector<HTMLElement>(
+				".view-mode-button",
+			);
 		if (!viewModeButton) return;
-		setIcon(viewModeButton, newMode == "source" ?  "book-open" : "pencil");
-		setTooltip(viewModeButton, newMode == "source" ? "Read mode" : "Edit mode");
+		setIcon(viewModeButton, newMode == "source" ? "book-open" : "pencil");
+		setTooltip(
+			viewModeButton,
+			newMode == "source" ? "Read mode" : "Edit mode",
+		);
 	}
 
 	private initColorMenu(file: TFile | null = null) {
@@ -217,9 +233,13 @@ export class StickyNoteLeaf {
 		const rememberColors = this.settingService.settings.rememberBgColors;
 		const useRecentColor = this.settingService.settings.useRecentBgColor;
 
-		const defaultColor =  this.settingService.settings.bgColors.find(bg => bg.isDefault);
+		const defaultColor = this.settingService.settings.bgColors.find(
+			(bg) => bg.isDefault,
+		);
 
-		let currentColor = useRecentColor ? (StickyNoteLeaf.lastNoteColor ?? defaultColor) : defaultColor
+		let currentColor = useRecentColor
+			? (StickyNoteLeaf.lastNoteColor ?? defaultColor)
+			: defaultColor;
 
 		if (rememberColors) {
 			const frontMatter =
@@ -230,7 +250,6 @@ export class StickyNoteLeaf {
 						(bg) => bg.property === property && bg.value === value,
 					) ?? currentColor;
 			}
-
 		}
 
 		if (!currentColor) {

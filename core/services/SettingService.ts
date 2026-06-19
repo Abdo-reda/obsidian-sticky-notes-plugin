@@ -4,6 +4,7 @@ import {
 } from "core/interfaces/PluginSettingsInterface";
 import { LoggingService } from "./LogginService";
 import type StickyNotesPlugin from "main";
+import { type StickyNoteLeaf } from "core/views/StickyNoteLeaf";
 
 export class SettingService {
 	plugin: StickyNotesPlugin;
@@ -37,6 +38,15 @@ export class SettingService {
 		});
 	}
 
+	async updateWorkspaceNotes(leafsList: Map<string, StickyNoteLeaf>) {
+		const savedNotes = Array.from(leafsList.values()).map(l => ({
+			id: l.leaf.id
+		}));
+		this.updateSettings({
+			workspaceNotes: savedNotes
+		})
+	}
+
 	getWindowDimensions() {
 		return this._settings.dimensions.split("x").map(Number);
 	}
@@ -45,7 +55,7 @@ export class SettingService {
 		this._settings = await Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			await this.plugin.loadData()
+			await this.plugin.loadData(),
 		);
 		this.plugin.globalSettings = this._settings;
 	}

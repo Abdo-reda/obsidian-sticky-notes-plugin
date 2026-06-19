@@ -1,4 +1,11 @@
-import { Menu, Plugin, TFile, WorkspaceLeaf, setTooltip } from "obsidian";
+import {
+	Menu,
+	Plugin,
+	TFile,
+	WorkspaceLeaf,
+	WorkspaceWindow,
+	setTooltip,
+} from "obsidian";
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
 import { LoggingService } from "core/services/LogginService";
 import { SettingService } from "core/services/SettingService";
@@ -7,28 +14,28 @@ import { StickyNotesSettingsTab } from "core/views/StickyNotesSettingsTab";
 import { MarkdownService } from "core/services/MarkdownService";
 
 export default class StickyNotesPlugin extends Plugin {
-    markdownService!: MarkdownService;
-	settingsManager!: SettingService;
+	markdownService!: MarkdownService;
+	settingsService!: SettingService;
 	globalSettings!: IPluginSettings;
 
 	async onload() {
 		LoggingService.disable();
 		LoggingService.info("Sticky Notes : plugin loading....");
-        this.addServices();
+		this.addServices();
 		this.addSettings();
 		this.addStickyNoteRibbonAction();
 		this.addStickyNoteCommand();
 		this.addStickyNoteMenuOptions();
-		this.addLeafChangeListner();
+		this.addLeafChangeListener();
+		this.addPopoutClosedListener();
 	}
 
 	onunload() {
 		LoggingService.info("Stiky Notes : plugin UN-loading ....");
-		// this.destroyAllStickyNotes(); //TODO: its an antipattern to detach leaves in the unload, more research is needed in order to know how to handle this.
 	}
 
 	private destroyAllStickyNotes() {
-		StickyNoteLeaf.leafsList.forEach((l) => l.leaf.detach());
+		StickyNoteLeaf.leafsList.forEach((l) => l.leaf.detach()); //could there be a race issue here with the event that unloads the leafs?
 	}
 
 	private addStickyNoteCommand() {
@@ -50,7 +57,7 @@ export default class StickyNotesPlugin extends Plugin {
 		const stickyNoteRibbon = this.addRibbonIcon(
 			"sticky-note",
 			"Open sticky note",
-			() => this.openStickyNotePopup()
+			() => this.openStickyNotePopup(),
 		);
 
 		setTooltip(stickyNoteRibbon, "Sticky note popup");
@@ -60,11 +67,12 @@ export default class StickyNotesPlugin extends Plugin {
 		const fileMenuEvent = this.app.workspace.on(
 			"file-menu",
 			(menu, file) =>
-				file instanceof TFile && this.addStickyNoteMenuItem(menu, file)
+				file instanceof TFile && this.addStickyNoteMenuItem(menu, file),
 		);
 		const editorMenuEvent = this.app.workspace.on(
 			"editor-menu",
-			(menu, _editor, view) => this.addStickyNoteMenuItem(menu, view.file)
+			(menu, _editor, view) =>
+				this.addStickyNoteMenuItem(menu, view.file),
 		);
 		this.registerEvent(fileMenuEvent);
 		this.registerEvent(editorMenuEvent);
@@ -78,42 +86,110 @@ export default class StickyNotesPlugin extends Plugin {
 		});
 	}
 
-    private addServices() {
+	private addServices() {
 		this.markdownService = new MarkdownService(this);
 	}
 
 	private async addSettings() {
-		this.settingsManager = new SettingService(this);
-		await this.settingsManager.initSettings();
+		this.settingsService = new SettingService(this);
+		await this.settingsService.initSettings();
 		this.addSettingTab(
-			new StickyNotesSettingsTab(this.app, this, this.settingsManager)
+			new StickyNotesSettingsTab(this.app, this, this.settingsService),
 		);
+		this.addOnLayoutReadListener();
 	}
 
-	// private addPopoutClosedListner() {
-	// 	const closeEvent = this.app.workspace.on('window-close', (win: WorkspaceWindow, window: Window) => {
-	// 		const noteId = win.doc.documentElement.getAttribute('note-id');
-	// 		if (noteId) {
-	// 			StickyNoteManager.removeBrowserWindow(noteId);
-	// 		}
-	// 	});
-	// 	this.registerEvent(closeEvent);
-	// }
+	private addPopoutClosedListener() {
+		const closeEvent = this.app.workspace.on(
+			"window-close",
+			(win: WorkspaceWindow, _window: Window) => {
+				const noteId = win.doc.documentElement.getAttribute("note-id");
+				if (noteId) StickyNoteLeaf.leafsList.delete(noteId);
+			},
+		);
+		this.registerEvent(closeEvent);
+	}
 
-	private addLeafChangeListner() {
+	private addOnLayoutReadListener() {
+		this.app.workspace.onLayoutReady(async () => {
+			await this.restoreStickyNotes();
+		});
+	}
+
+	private async restoreStickyNotes() {
+		if (!this.settingsService.settings.saveWorkspace) return;
+		
+		const savedNotes = this.settingsService.settings.workspaceNotes;
+		if (!savedNotes.length) return;
+
+		const popoutLeaves: WorkspaceLeaf[] = [];
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			const leafRoot = leaf.getRoot();
+			const isPopout = leafRoot !== this.app.workspace.rootSplit && 
+                         leaf.getRoot() !== this.app.workspace.leftSplit && 
+                         leaf.getRoot() !== this.app.workspace.rightSplit;
+			if (isPopout) popoutLeaves.push(leaf);
+		});
+
+		for (const saved of savedNotes) {
+			const match = popoutLeaves.find((leaf) => (leaf as any).id === saved.id);
+			if (!match) continue;
+			const stickyLeaf = new StickyNoteLeaf(
+				match,
+				this.settingsService,
+				this.markdownService,
+			);
+			await stickyLeaf.initStickyNote(); 
+			// reapply saved color/pin/size here since initStickyNote(file=null) skips frontmatter color lookup
+		}
+	}
+
+	private addLeafChangeListener() {
 		const leafChangeEvent = this.app.workspace.on(
 			"active-leaf-change",
 			(leaf: WorkspaceLeaf | null) => {
 				const noteId = leaf
 					?.getContainer()
 					.win.activeDocument.documentElement.getAttribute("note-id");
-				StickyNoteLeaf.leafsList.forEach((l) => {
-					if (l.title === noteId) l.initView();
-				});
-			}
+
+				if (noteId) {
+					const stickyLeaf = StickyNoteLeaf.leafsList.get(noteId);
+					stickyLeaf?.initView(true);
+				}
+			},
 		);
 		this.registerEvent(leafChangeEvent);
 	}
+
+	//TODO: create a new file and open as a new sticky note, contribution @Bunch045
+	// private async openNewStickyNote() {
+	// 	const pad = (n: number) => n.toString().padStart(2, "0");
+	// 	const now = new Date();
+	// 	const formatted =
+	// 		now.getFullYear().toString() +
+	// 		pad(now.getMonth() + 1) +
+	// 		pad(now.getDate()) +
+	// 		pad(now.getHours()) +
+	// 		pad(now.getMinutes()) +
+	// 		pad(now.getSeconds());
+
+	// 	await this.app.vault
+	// 		.create(
+	// 			this.settingsManager.settings.stickyNotePath +
+	// 				"/Sticky Note " +
+	// 				formatted +
+	// 				".md",
+	// 			"---\nstickynote: true\n---",
+	// 		)
+	// 		.then((value) => {
+	// 			file = value;
+	// 		})
+	// 		.catch((error) => {
+	// 			new Notice("Sticky note creation failed.");
+	// 		});
+
+	// 	this.openStickyNotePopup(file);
+	// }
 
 	private async openStickyNotePopup(file: TFile | null = null) {
 		LoggingService.info("Opened Sticky Note Popup");
@@ -126,8 +202,8 @@ export default class StickyNotesPlugin extends Plugin {
 		});
 		const stickNoteLeaf = new StickyNoteLeaf(
 			popoutLeaf,
-			this.settingsManager,
-            this.markdownService,
+			this.settingsService,
+			this.markdownService,
 		);
 		await stickNoteLeaf.initStickyNote(file);
 	}
