@@ -12,6 +12,7 @@ export interface IPluginSettings {
 	sizeOption: SizeOptions;
 	dimensions: string;
 	resizable: boolean;
+	useRecentBgColor: boolean;
 	rememberBgColors: boolean;
 	bgColors: IBackgroundColor[];
 }
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: IPluginSettings = {
 	sizeOption: SizeOptions.DEFAULT,
 	dimensions: `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`,
 	resizable: false,
+    useRecentBgColor: true,
     rememberBgColors: false,
 	bgColors: structuredClone(DEFAULT_COLORS)
 };
