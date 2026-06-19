@@ -16,6 +16,7 @@ import { type SettingService } from "core/services/SettingService";
 import { SizeOptions } from "core/enums/sizeOptionEnum";
 import { type MarkdownService } from "core/services/MarkdownService";
 import { PinOptions } from "core/enums/pinOptionEnum";
+import { IBackgroundColor } from "core/interfaces/BackgroundColorInterface";
 
 export class StickyNoteLeaf {
 	private static stickyNoteId = 0;
@@ -30,6 +31,7 @@ export class StickyNoteLeaf {
 	mainWindow: Electron.BrowserWindow | undefined;
 	colorMenu: ColorMenu | undefined;
 	private static lastNotePinnedState = true;
+	public static lastNoteColor: IBackgroundColor | undefined;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -213,30 +215,37 @@ export class StickyNoteLeaf {
 
 	private async setDefaultColor(file: TFile | null = null) {
 		const rememberColors = this.settingService.settings.rememberBgColors;
-		let defaultColor = this.settingService.settings.bgColors.find(
-			(bg) => bg.isDefault,
-		);
+		const useRecentColor = this.settingService.settings.useRecentBgColor;
+
+		const defaultColor =  this.settingService.settings.bgColors.find(bg => bg.isDefault);
+
+		let currentColor = useRecentColor ? (StickyNoteLeaf.lastNoteColor ?? defaultColor) : defaultColor
+
 		if (rememberColors) {
 			const frontMatter =
 				await this.markdownService.getFrontmatterAsync(file);
 			for (const [property, value] of Object.entries(frontMatter)) {
-				defaultColor =
+				currentColor =
 					this.settingService.settings.bgColors.find(
 						(bg) => bg.property === property && bg.value === value,
-					) ?? defaultColor;
+					) ?? currentColor;
 			}
+
 		}
-		if (!defaultColor) {
+
+		if (!currentColor) {
 			LoggingService.warn("No default color found ...");
 			return;
 		}
+
 		this.document.body.setCssProps({
-			"--note-light-color": defaultColor.lightColor,
-			"--note-dark-color": defaultColor.darkColor,
+			"--note-light-color": currentColor.lightColor,
+			"--note-dark-color": currentColor.darkColor,
 		});
+
 		if (rememberColors) {
 			this.markdownService.updateFrontmatterAsync(file, {
-				[defaultColor.property]: defaultColor.value,
+				[currentColor.property]: currentColor.value,
 			});
 		}
 	}

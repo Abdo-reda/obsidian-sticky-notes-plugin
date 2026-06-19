@@ -201,16 +201,34 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 			.setHeading();
 
 		this.addRememberBackgroundColor(this.containerEl);
+		this.addRecentBackgroundColor(this.containerEl);
 		this.addBackgroundColorSetting(this.containerEl);
 
 		return colorSettings;
+	}
+
+	addRecentBackgroundColor(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("Use recent color")
+			.setDesc(
+				"The default background color for a sticky note will be the same as the most recently used color.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.settingService.settings.useRecentBgColor)
+					.onChange((value) => {
+						this.updateAndRerenderSettings({
+							useRecentBgColor: value,
+						});
+					}),
+			);
 	}
 
 	addRememberBackgroundColor(ele: HTMLElement) {
 		return new Setting(ele)
 			.setName("Remember background colors")
 			.setDesc(
-				"Background colors for sticky notes will be stored in the frontmatter of each note.",
+				"Background colors for sticky notes will be stored & saved in the frontmatter of each note.",
 			)
 			.addToggle((toggle) =>
 				toggle

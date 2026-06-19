@@ -2,6 +2,7 @@ import { Menu, MenuItem } from "obsidian";
 import { type TFile } from "obsidian";
 import { IBackgroundColor } from "core/interfaces/BackgroundColorInterface";
 import { isLightTheme } from "core/utils/colorUtils";
+import { StickyNoteLeaf } from "core/views/StickyNoteLeaf";
 
 type ColorMenuItem = MenuItem & { dom: HTMLElement };
 
@@ -45,6 +46,7 @@ export class ColorMenu extends Menu {
 							"--note-light-color": color.lightColor,
 							"--note-dark-color": color.darkColor,
 						});
+						StickyNoteLeaf.lastNoteColor = color;
 						if (this.rememberColors) {
 							this.updateFrontMatter(null, {
 								[color.property]: color.value,
