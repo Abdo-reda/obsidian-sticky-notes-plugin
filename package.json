@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-sticky-notes-plugin",
-	"version": "0.9.1",
+	"version": "1.0.0",
 	"description": "This is a sticky notes plugin for obsidian",
 	"main": "main.js",
 	"scripts": {
@@ -15,9 +15,7 @@
 		"@electron/remote": "^2.1.2",
 		"@types/node": "^16.11.6",
 		"@types/sortablejs": "^1.13.0",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
-		"builtin-modules": "3.3.0",
 		"electron": "^34.2.0",
 		"esbuild": "0.17.3",
 		"obsidian": "latest",

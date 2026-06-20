@@ -46,3 +46,17 @@
 .single-color-setting .setting-item-info {
     display: none;
 }
+
+.sticky-note .view-header-title-container {
+    app-region: drag;		
+    -webkit-app-region: drag;
+}
+
+/* Conflicts with other Plugins */
+.sticky-note .daily-note-navbar {
+	display: none;
+}
+
+.sticky-note .view-header-title {
+	display: flex;
+} 

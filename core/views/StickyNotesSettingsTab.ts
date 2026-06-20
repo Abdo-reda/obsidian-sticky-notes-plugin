@@ -16,16 +16,18 @@ import {
 } from "core/constants/defaultColorSettings";
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
 import { getRandomHexColor, isLightTheme } from "core/utils/colorUtils";
+import { PinOptions } from "core/enums/pinOptionEnum";
+import { FolderSuggest } from "./FolderSuggestInput";
 
 export class StickyNotesSettingsTab extends PluginSettingTab {
 	settingService: SettingService;
-	dimensionsSettingComponent: TextComponent;
-	resizableSettingComponent: ToggleComponent;
+	dimensionsSettingComponent: TextComponent | undefined;
+	resizableSettingComponent: ToggleComponent | undefined;
 
 	constructor(
 		app: App,
 		plugin: StickyNotesPlugin,
-		settingService: SettingService
+		settingService: SettingService,
 	) {
 		super(app, plugin);
 		this.settingService = settingService;
@@ -41,8 +43,10 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 			return;
 		}
 
+		this.addGeneralSettings();
 		this.addSizeSettings();
 		this.addColorSettings();
+		return;
 	}
 
 	rerenderSettings() {
@@ -55,10 +59,16 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		this.rerenderSettings();
 	}
 
+	addGeneralSettings() {
+		new Setting(this.containerEl).setName("General").setHeading();
+		this.addNewStickyNotePathSetting(this.containerEl);
+		this.addSaveWorkspaceSetting(this.containerEl);
+		this.addTaskbarVisibilitySetting(this.containerEl);
+		this.addPinSetting(this.containerEl);
+	}
+
 	addSizeSettings() {
-		const sizeSettings = new Setting(this.containerEl)
-			.setName("Size")
-			.setHeading();
+		new Setting(this.containerEl).setName("Size").setHeading();
 		this.addDimensionSetting(this.containerEl);
 		this.addResizableSetting(this.containerEl);
 	}
@@ -67,7 +77,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		return new Setting(ele)
 			.setName("Default size")
 			.setDesc(
-				"Select what default size each new sticky note window should take. Make sure its in the correct format e.g (width x height)"
+				"Select what default size each new sticky note window should take. Make sure its in the correct format e.g (width x height)",
 			)
 			.addDropdown((dropdown) =>
 				dropdown
@@ -76,15 +86,15 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 							Object.values(SizeOptions).map((value) => [
 								value,
 								value,
-							])
-						)
+							]),
+						),
 					)
 					.setValue(this.settingService.settings.sizeOption)
 					.onChange(async (value) => {
 						if (value === SizeOptions.DEFAULT) {
 							this.settingService.updateWindowDimensions(
 								300,
-								300
+								300,
 							);
 						} else if (value === SizeOptions.REMEMBER_LAST) {
 							this.settingService.updateSettings({
@@ -94,11 +104,11 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 						this.updateAndRerenderSettings({
 							sizeOption: value as SizeOptions,
 						});
-					})
+					}),
 			)
 			.addText((text) => {
 				this.dimensionsSettingComponent = text
-					.setPlaceholder("eg.: 300x300")
+					.setPlaceholder("Example: 300x300")
 					.setValue(this.settingService.settings.dimensions)
 					.onChange(async (value) => {
 						let newDimensions = "300x300";
@@ -116,11 +126,36 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 
 				this.disabledDimensionSetting(
 					this.settingService.settings.sizeOption !==
-						SizeOptions.CUSTOM
+						SizeOptions.CUSTOM,
 				);
 
 				return this.dimensionsSettingComponent;
 			});
+	}
+
+	addPinSetting(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("Default pin mode")
+			.setDesc(
+				"Select the default Pin mode when a sticky note is created.",
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions(
+						Object.fromEntries(
+							Object.values(PinOptions).map((value) => [
+								value,
+								value,
+							]),
+						),
+					)
+					.setValue(this.settingService.settings.pinOption)
+					.onChange(async (value) => {
+						this.settingService.updateSettings({
+							pinOption: value as PinOptions,
+						});
+					}),
+			);
 	}
 
 	addResizableSetting(ele: HTMLElement) {
@@ -132,7 +167,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 					.setValue(
 						this.settingService.settings.resizable ||
 							this.settingService.settings.sizeOption ===
-								SizeOptions.REMEMBER_LAST
+								SizeOptions.REMEMBER_LAST,
 					)
 					.onChange(async (value) => {
 						await this.settingService.updateSettings({
@@ -142,10 +177,63 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 
 				this.disabledResizableSetting(
 					this.settingService.settings.sizeOption ===
-						SizeOptions.REMEMBER_LAST
+						SizeOptions.REMEMBER_LAST,
 				);
 				return this.resizableSettingComponent;
 			});
+	}
+
+	addNewStickyNotePathSetting(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("New sticky note path")
+			.setDesc("Folder where new sticky notes are created.")
+			.addText((text) => {
+				text.setPlaceholder("Example: StickyNotes")
+					.setValue(
+						this.settingService.settings.newStickyNotePath,
+					)
+					.onChange(async (value) => {
+						await this.settingService.updateSettings({
+							newStickyNotePath: value.trim(),
+						});
+					});
+
+				new FolderSuggest(this.app, text.inputEl, (folder) => {
+					this.settingService.updateSettings({
+						newStickyNotePath: folder.path,
+					});
+				});
+			});
+	}
+
+	addTaskbarVisibilitySetting(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("Taskbar visibility")
+			.setDesc("Enable or disable taskbar visibility sticky notes.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.settingService.settings.taskbarVisibility)
+					.onChange((value) => {
+						this.settingService.updateSettings({
+							taskbarVisibility: value,
+						});
+					}),
+			);
+	}
+
+	addSaveWorkspaceSetting(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("Save workspace")
+			.setDesc("Save and load sticky notes when closing and opening workspace.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.settingService.settings.saveWorkspace)
+					.onChange((value) => {
+						this.settingService.updateSettings({
+							saveWorkspace: value,
+						});
+					}),
+			);
 	}
 
 	addColorSettings() {
@@ -154,16 +242,34 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 			.setHeading();
 
 		this.addRememberBackgroundColor(this.containerEl);
+		this.addRecentBackgroundColor(this.containerEl);
 		this.addBackgroundColorSetting(this.containerEl);
 
 		return colorSettings;
+	}
+
+	addRecentBackgroundColor(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("Use recent color")
+			.setDesc(
+				"The default background color for a sticky note will be the same as the most recently used color.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.settingService.settings.useRecentBgColor)
+					.onChange((value) => {
+						this.updateAndRerenderSettings({
+							useRecentBgColor: value,
+						});
+					}),
+			);
 	}
 
 	addRememberBackgroundColor(ele: HTMLElement) {
 		return new Setting(ele)
 			.setName("Remember background colors")
 			.setDesc(
-				"Background colors for sticky notes will be stored in the frontmatter of each note."
+				"Background colors for sticky notes will be stored & saved in the frontmatter of each note.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -172,7 +278,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 						this.updateAndRerenderSettings({
 							rememberBgColors: value,
 						});
-					})
+					}),
 			);
 	}
 
@@ -180,14 +286,14 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		const bgSettings = new Setting(ele)
 			.setName("Background colors")
 			.setDesc(
-				"Adjust sticky note background colors. The toggle determines the default color."
+				"Adjust sticky note background colors. The toggle determines the default color.",
 			)
 			.addExtraButton((b) =>
 				b.setIcon("rotate-ccw").onClick(() =>
 					this.updateAndRerenderSettings({
 						bgColors: structuredClone(DEFAULT_COLORS),
-					})
-				)
+					}),
+				),
 			)
 			.addExtraButton((b) =>
 				b.setIcon("plus").onClick(() => {
@@ -202,13 +308,13 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 						}`,
 					});
 					this.updateAndRerenderSettings({});
-				})
+				}),
 			);
 
 		const colorContainer = new Setting(ele).setClass("bg-color-settings");
 		const settingsContainer = colorContainer.settingEl.createDiv();
 		this.settingService.settings.bgColors.forEach((bg) =>
-			this.addSingleColorSetting(settingsContainer, bg)
+			this.addSingleColorSetting(settingsContainer, bg),
 		);
 
 		return bgSettings;
@@ -218,28 +324,31 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		const colorSetting = new Setting(ele)
 			.setClass("single-color-setting")
 			.addColorPicker((c) =>
-				c.setValue(isLightTheme() ? bg.lightColor :  bg.darkColor).onChange((v) => {
-					if (isLightTheme()) {
-                        bg.lightColor = v;
-                    } else {
-                        bg.darkColor = v;
-                    }
-					this.settingService.updateSettings({});
-				})
+				c
+					.setValue(isLightTheme() ? bg.lightColor : bg.darkColor)
+					.onChange((v) => {
+						if (isLightTheme()) {
+							bg.lightColor = v;
+						} else {
+							bg.darkColor = v;
+						}
+						this.settingService.updateSettings({});
+					}),
 			);
 
 		const rememberColors = this.settingService.settings.rememberBgColors;
 
 		if (rememberColors) {
-            //TODO: add a suggestion box / autocomplete
+			//TODO: add a suggestion box / autocomplete
+			//https://docs.obsidian.md/Reference/TypeScript+API/AbstractInputSuggest
 			colorSetting.addText((propertyKey) =>
 				propertyKey
 					.setPlaceholder("property key")
 					.setValue(bg.property)
 					.onChange((v) => {
-                        bg.property = v;
-                        this.settingService.updateSettings({})
-                    })
+						bg.property = v;
+						this.settingService.updateSettings({});
+					}),
 			);
 		}
 
@@ -247,25 +356,25 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 			.addText((valueText) =>
 				valueText
 					.setPlaceholder(
-						rememberColors ? "property value" : "color name"
+						rememberColors ? "property value" : "color name",
 					)
 					.setValue(bg.value)
 					.onChange((v) => {
 						bg.value = v;
 						this.settingService.updateSettings({});
-					})
+					}),
 			)
 			.addToggle((defaultToggle) =>
 				defaultToggle
 					.setValue(bg.isDefault)
 					.onChange(() => {
 						this.settingService.settings.bgColors.forEach(
-							(b) => (b.isDefault = false)
+							(b) => (b.isDefault = false),
 						);
 						bg.isDefault = true;
 						this.updateAndRerenderSettings({});
 					})
-					.setDisabled(bg.isDefault)
+					.setDisabled(bg.isDefault),
 			)
 			.addExtraButton((deleteButton) =>
 				deleteButton
@@ -274,7 +383,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 						this.settingService.settings.bgColors.remove(bg);
 						this.updateAndRerenderSettings({});
 					})
-					.setDisabled(bg.isDefault)
+					.setDisabled(bg.isDefault),
 			);
 	}
 
@@ -283,7 +392,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		this.disableSettingComponent(
 			this.dimensionsSettingComponent,
 			this.dimensionsSettingComponent.inputEl,
-			value
+			value,
 		);
 	}
 
@@ -292,16 +401,16 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 		this.disableSettingComponent(
 			this.resizableSettingComponent,
 			this.resizableSettingComponent.toggleEl,
-			value
+			value,
 		);
 	}
 
 	disableSettingComponent<T>(
 		settingComponent: ValueComponent<T>,
 		inputEl: HTMLElement,
-		value: boolean
+		value: boolean,
 	): ValueComponent<T> {
-		settingComponent.setDisabled(value);
+		settingComponent.setDisabled(value); //might require obsidian 1.2.3...
 		if (value) {
 			inputEl.addClass("disabled-setting");
 		} else {

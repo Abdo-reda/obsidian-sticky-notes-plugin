@@ -29,7 +29,7 @@ export const DEFAULT_COLORS: IBackgroundColor[] = [
 		property: DEFAULT_COLOR_PROPERTY,
 		value: Colors.YELLOW,
 		lightColor: "#faf0d0",
-		darkColor: "#a87b03",
+		darkColor: "#ca8a04",
 		isDefault: true,
 	},
 	{
