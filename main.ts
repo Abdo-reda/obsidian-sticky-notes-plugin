@@ -46,6 +46,12 @@ export default class StickyNotesPlugin extends Plugin {
 			callback: () => this.openStickyNotePopup(),
 		});
 		this.addCommand({
+			id: "create-sticky-note",
+			name: "Create sticky note",
+			icon: "sticky-note-plus",
+			callback: () => this.createNewStickyNote(),
+		});
+		this.addCommand({
 			id: "destroy-sticky-note-views",
 			name: "Destroy all",
 			icon: "copy-x",
@@ -118,28 +124,32 @@ export default class StickyNotesPlugin extends Plugin {
 
 	private async restoreStickyNotes() {
 		if (!this.settingsService.settings.saveWorkspace) return;
-		
-		const savedWorkspaceNotes = this.settingsService.settings.workspaceNotes;
+
+		const savedWorkspaceNotes =
+			this.settingsService.settings.workspaceNotes;
 		if (!savedWorkspaceNotes.length) return;
 
 		const popoutLeaves: WorkspaceLeaf[] = [];
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			const leafRoot = leaf.getRoot();
-			const isPopout = leafRoot !== this.app.workspace.rootSplit && 
-                         leaf.getRoot() !== this.app.workspace.leftSplit && 
-                         leaf.getRoot() !== this.app.workspace.rightSplit;
+			const isPopout =
+				leafRoot !== this.app.workspace.rootSplit &&
+				leaf.getRoot() !== this.app.workspace.leftSplit &&
+				leaf.getRoot() !== this.app.workspace.rightSplit;
 			if (isPopout) popoutLeaves.push(leaf);
 		});
 
 		for (const curSavedNote of savedWorkspaceNotes) {
-			const popoutLeaf = popoutLeaves.find((leaf) => (leaf as any).id === curSavedNote.id);
+			const popoutLeaf = popoutLeaves.find(
+				(leaf) => (leaf as any).id === curSavedNote.id,
+			);
 			if (!popoutLeaf) continue;
 			const stickyLeaf = new StickyNoteLeaf(
 				popoutLeaf,
 				this.settingsService,
 				this.markdownService,
 			);
-			await stickyLeaf.initStickyNote(null, curSavedNote.color, false); 
+			await stickyLeaf.initStickyNote(null, curSavedNote.color, false);
 		}
 	}
 
@@ -160,35 +170,25 @@ export default class StickyNotesPlugin extends Plugin {
 		this.registerEvent(leafChangeEvent);
 	}
 
-	//TODO: create a new file and open as a new sticky note, contribution @Bunch045
-	// private async openNewStickyNote() {
-	// 	const pad = (n: number) => n.toString().padStart(2, "0");
-	// 	const now = new Date();
-	// 	const formatted =
-	// 		now.getFullYear().toString() +
-	// 		pad(now.getMonth() + 1) +
-	// 		pad(now.getDate()) +
-	// 		pad(now.getHours()) +
-	// 		pad(now.getMinutes()) +
-	// 		pad(now.getSeconds());
+	private async createNewStickyNote() {
+		const now = new Date();
+		const datePart = now.toDateString();
+		const timePart = now.toTimeString().split(" ")[0].replace(/:/g, "'"); 
+		const formattedName = `${datePart} ${timePart}`;
 
-	// 	await this.app.vault
-	// 		.create(
-	// 			this.settingsManager.settings.stickyNotePath +
-	// 				"/Sticky Note " +
-	// 				formatted +
-	// 				".md",
-	// 			"---\nstickynote: true\n---",
-	// 		)
-	// 		.then((value) => {
-	// 			file = value;
-	// 		})
-	// 		.catch((error) => {
-	// 			new Notice("Sticky note creation failed.");
-	// 		});
-
-	// 	this.openStickyNotePopup(file);
-	// }
+		await this.app.vault
+			.create(
+				this.settingsService.settings.newStickyNotePath +
+					`/${formattedName}.md`,
+				"--- empty note ---",
+			)
+			.then((file) => {
+				this.openStickyNotePopup(file);
+			})
+			.catch((error) => {
+				LoggingService.warn("unable to create new sticky note");
+			});
+	}
 
 	private async openStickyNotePopup(file: TFile | null = null) {
 		LoggingService.info("Opened Sticky Note Popup");

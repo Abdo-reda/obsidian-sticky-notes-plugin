@@ -17,6 +17,7 @@ export interface IPluginSettings {
 	useRecentBgColor: boolean;
 	rememberBgColors: boolean;
 	bgColors: IBackgroundColor[];
+	newStickyNotePath: string;
 	workspaceNotes: IStickyNoteState[];
 }
 
@@ -30,5 +31,6 @@ export const DEFAULT_SETTINGS: IPluginSettings = {
     useRecentBgColor: true,
     rememberBgColors: false,
 	bgColors: structuredClone(DEFAULT_COLORS),
+	newStickyNotePath: "",
 	workspaceNotes: [],
 };
