@@ -17,6 +17,7 @@ import {
 import { IPluginSettings } from "core/interfaces/PluginSettingsInterface";
 import { getRandomHexColor, isLightTheme } from "core/utils/colorUtils";
 import { PinOptions } from "core/enums/pinOptionEnum";
+import { FolderSuggest } from "./FolderSuggestInput";
 
 export class StickyNotesSettingsTab extends PluginSettingTab {
 	settingService: SettingService;
@@ -60,6 +61,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 
 	addGeneralSettings() {
 		new Setting(this.containerEl).setName("General").setHeading();
+		this.addNewStickyNotePathSetting(this.containerEl);
 		this.addSaveWorkspaceSetting(this.containerEl);
 		this.addTaskbarVisibilitySetting(this.containerEl);
 		this.addPinSetting(this.containerEl);
@@ -106,7 +108,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 			)
 			.addText((text) => {
 				this.dimensionsSettingComponent = text
-					.setPlaceholder("eg.: 300x300")
+					.setPlaceholder("Example: 300x300")
 					.setValue(this.settingService.settings.dimensions)
 					.onChange(async (value) => {
 						let newDimensions = "300x300";
@@ -178,6 +180,29 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 						SizeOptions.REMEMBER_LAST,
 				);
 				return this.resizableSettingComponent;
+			});
+	}
+
+	addNewStickyNotePathSetting(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("New sticky note path")
+			.setDesc("Folder where new sticky notes are created.")
+			.addText((text) => {
+				text.setPlaceholder("Example: StickyNotes")
+					.setValue(
+						this.settingService.settings.newStickyNotePath,
+					)
+					.onChange(async (value) => {
+						await this.settingService.updateSettings({
+							newStickyNotePath: value.trim(),
+						});
+					});
+
+				new FolderSuggest(this.app, text.inputEl, (folder) => {
+					this.settingService.updateSettings({
+						newStickyNotePath: folder.path,
+					});
+				});
 			});
 	}
 
