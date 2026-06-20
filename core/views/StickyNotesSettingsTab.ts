@@ -60,6 +60,7 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 
 	addGeneralSettings() {
 		new Setting(this.containerEl).setName("General").setHeading();
+		this.addSaveWorkspaceSetting(this.containerEl);
 		this.addTaskbarVisibilitySetting(this.containerEl);
 		this.addPinSetting(this.containerEl);
 	}
@@ -190,6 +191,21 @@ export class StickyNotesSettingsTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.settingService.updateSettings({
 							taskbarVisibility: value,
+						});
+					}),
+			);
+	}
+
+	addSaveWorkspaceSetting(ele: HTMLElement) {
+		return new Setting(ele)
+			.setName("Save workspace")
+			.setDesc("Save and load sticky notes when closing and opening workspace.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.settingService.settings.saveWorkspace)
+					.onChange((value) => {
+						this.settingService.updateSettings({
+							saveWorkspace: value,
 						});
 					}),
 			);

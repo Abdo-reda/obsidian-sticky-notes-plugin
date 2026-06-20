@@ -1,12 +1,14 @@
 import { SizeOptions } from "core/enums/sizeOptionEnum";
-import { IBackgroundColor } from "./BackgroundColorInterface";
+import { type IBackgroundColor } from "./BackgroundColorInterface";
 import { DEFAULT_COLORS } from "core/constants/defaultColorSettings";
 import { PinOptions } from "core/enums/pinOptionEnum";
+import { type IStickyNoteState } from "./WorkspaceStickyNoteInterface";
 
 const DEFAULT_WIDTH = 300;
 const DEFAULT_HEIGHT = 300;
 
 export interface IPluginSettings {
+	saveWorkspace: boolean;
 	taskbarVisibility: boolean;
 	pinOption: PinOptions;
 	sizeOption: SizeOptions;
@@ -15,9 +17,11 @@ export interface IPluginSettings {
 	useRecentBgColor: boolean;
 	rememberBgColors: boolean;
 	bgColors: IBackgroundColor[];
+	workspaceNotes: IStickyNoteState[];
 }
 
 export const DEFAULT_SETTINGS: IPluginSettings = {
+	saveWorkspace: true,
 	taskbarVisibility: true,
 	pinOption: PinOptions.ALWAYS,
 	sizeOption: SizeOptions.DEFAULT,
@@ -25,5 +29,6 @@ export const DEFAULT_SETTINGS: IPluginSettings = {
 	resizable: false,
     useRecentBgColor: true,
     rememberBgColors: false,
-	bgColors: structuredClone(DEFAULT_COLORS)
+	bgColors: structuredClone(DEFAULT_COLORS),
+	workspaceNotes: [],
 };
