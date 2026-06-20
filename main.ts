@@ -41,7 +41,7 @@ export default class StickyNotesPlugin extends Plugin {
 	private addStickyNoteCommand() {
 		this.addCommand({
 			id: "open-sticky-note-view",
-			name: "Open sticky note window",
+			name: "Open sticky note",
 			icon: "sticky-note",
 			callback: () => this.openStickyNotePopup(),
 		});
@@ -53,7 +53,7 @@ export default class StickyNotesPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: "destroy-sticky-note-views",
-			name: "Destroy all",
+			name: "Destroy all sticky note",
 			icon: "copy-x",
 			callback: () => this.destroyAllStickyNotes(),
 		});
