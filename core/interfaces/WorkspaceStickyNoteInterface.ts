@@ -1,6 +1,8 @@
-import { Colors } from "core/enums/colorEnum";
+import { type IBackgroundColor } from "./BackgroundColorInterface";
 
-export interface IWorkspaceStickyNote {
+export interface IStickyNoteState {
 	id: string;
-	// color: Colors;
+	color: IBackgroundColor;
+	// pinned or not
+	// read mode or not
 }

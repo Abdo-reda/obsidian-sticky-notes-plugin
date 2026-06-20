@@ -17,6 +17,7 @@ import { SizeOptions } from "core/enums/sizeOptionEnum";
 import { type MarkdownService } from "core/services/MarkdownService";
 import { PinOptions } from "core/enums/pinOptionEnum";
 import { IBackgroundColor } from "core/interfaces/BackgroundColorInterface";
+import { DEFAULT_COLORS } from "core/constants/defaultColorSettings";
 
 type StickyNoteSubLeaf = WorkspaceLeaf & { id: string };
 
@@ -33,6 +34,7 @@ export class StickyNoteLeaf {
 	mainWindow: Electron.BrowserWindow | undefined;
 	colorMenu: ColorMenu | undefined;
 	init: boolean = false;
+	color: IBackgroundColor = DEFAULT_COLORS[0];
 	private static lastNotePinnedState = true;
 	public static lastNoteColor: IBackgroundColor | undefined;
 
@@ -56,13 +58,13 @@ export class StickyNoteLeaf {
 		return `sticky-note-${this.id}`;
 	}
 
-	async initStickyNote(file: TFile | null = null) {
+	async initStickyNote(file: TFile | null = null, explicitColor: IBackgroundColor | null = null, resize: boolean = true) {
 		LoggingService.info(`Init Sticky Note ${this.id} ...`);
 		this.document.title = this.title;
 		this.document.documentElement.setAttribute("note-id", this.title);
-		this.initColorMenu(file);
+		this.initColorMenu(file, explicitColor);
 		this.initView(false);
-		this.initMainWindow();
+		this.initMainWindow(resize);
 		if (file) await this.leaf.openFile(file);
 	}
 
@@ -74,10 +76,10 @@ export class StickyNoteLeaf {
 		this.addNoteContainerClass();
 		this.removeHeader();
 		this.removeDefaultActionsMenu();
-		this.addStickyNoteActions();
+		this.addActions();
 	}
 
-	private initMainWindow() {
+	private initMainWindow(resize: boolean = true) {
 		const windows = BrowserWindow.getAllWindows();
 		const mainWindow = windows.find((w) => w.title === this.title);
 		if (!mainWindow) {
@@ -88,9 +90,11 @@ export class StickyNoteLeaf {
 		}
 
 		this.mainWindow = mainWindow;
-
-		const [width, height] = this.settingService.getWindowDimensions();
-		this.mainWindow.setSize(width, height);
+		
+		if (resize) {
+			const [width, height] = this.settingService.getWindowDimensions();
+			this.mainWindow.setSize(width, height);
+		}
 		this.mainWindow.setResizable(this.settingService.settings.resizable);
 
 		if (
@@ -149,7 +153,7 @@ export class StickyNoteLeaf {
 		breadcrumbTitleEl?.remove();
 	}
 
-	private addStickyNoteActions() {
+	private addActions() {
 		if (!(this.view instanceof ItemView)) return;
 
 		if (!Platform.isMacOS) {
@@ -217,29 +221,46 @@ export class StickyNoteLeaf {
 		);
 	}
 
-	private initColorMenu(file: TFile | null = null) {
+	private initColorMenu(file: TFile | null = null, color: IBackgroundColor | null = null) {
 		this.colorMenu = new ColorMenu(
-			this.document.body,
 			this.settingService.settings.bgColors,
-			this.settingService.settings.rememberBgColors,
-			this.markdownService.updateFrontmatterAsync.bind(
-				this.markdownService,
-			),
+			this.updateColor.bind(this),
 		);
-		this.setDefaultColor(file);
+		this.setDefaultColor(file, color);
 	}
 
-	private async setDefaultColor(file: TFile | null = null) {
+	private updateColor(newColor: IBackgroundColor, file: TFile | null = null) {
+		this.document.body.setCssProps({
+			"--note-light-color": newColor.lightColor,
+			"--note-dark-color": newColor.darkColor,
+		});
+
+		this.color = newColor;
+		this.settingService.updateWorkspaceNotes(StickyNoteLeaf.leafsList)
+
+		if (this.settingService.settings.rememberBgColors) {
+			this.markdownService.updateFrontmatterAsync(file, {
+				[newColor.property]: newColor.value,
+			});
+		}
+	}
+
+	private async setDefaultColor(file: TFile | null = null, explicitColor: IBackgroundColor | null = null) {
+
+		if (explicitColor) {
+			this.updateColor(explicitColor, file)
+			return;
+		}
+
 		const rememberColors = this.settingService.settings.rememberBgColors;
 		const useRecentColor = this.settingService.settings.useRecentBgColor;
 
 		const defaultColor = this.settingService.settings.bgColors.find(
 			(bg) => bg.isDefault,
 		);
+		const recentColor = StickyNoteLeaf.lastNoteColor ?? defaultColor;
 
-		let currentColor = useRecentColor
-			? (StickyNoteLeaf.lastNoteColor ?? defaultColor)
-			: defaultColor;
+		let currentColor = useRecentColor ? recentColor : defaultColor;
 
 		if (rememberColors) {
 			const frontMatter =
@@ -257,15 +278,6 @@ export class StickyNoteLeaf {
 			return;
 		}
 
-		this.document.body.setCssProps({
-			"--note-light-color": currentColor.lightColor,
-			"--note-dark-color": currentColor.darkColor,
-		});
-
-		if (rememberColors) {
-			this.markdownService.updateFrontmatterAsync(file, {
-				[currentColor.property]: currentColor.value,
-			});
-		}
+		this.updateColor(currentColor, file)
 	}
 }

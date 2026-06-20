@@ -1,8 +1,8 @@
 import { SizeOptions } from "core/enums/sizeOptionEnum";
-import { IBackgroundColor } from "./BackgroundColorInterface";
+import { type IBackgroundColor } from "./BackgroundColorInterface";
 import { DEFAULT_COLORS } from "core/constants/defaultColorSettings";
 import { PinOptions } from "core/enums/pinOptionEnum";
-import { IWorkspaceStickyNote } from "./WorkspaceStickyNoteInterface";
+import { type IStickyNoteState } from "./WorkspaceStickyNoteInterface";
 
 const DEFAULT_WIDTH = 300;
 const DEFAULT_HEIGHT = 300;
@@ -17,7 +17,7 @@ export interface IPluginSettings {
 	useRecentBgColor: boolean;
 	rememberBgColors: boolean;
 	bgColors: IBackgroundColor[];
-	workspaceNotes: IWorkspaceStickyNote[];
+	workspaceNotes: IStickyNoteState[];
 }
 
 export const DEFAULT_SETTINGS: IPluginSettings = {

@@ -119,8 +119,8 @@ export default class StickyNotesPlugin extends Plugin {
 	private async restoreStickyNotes() {
 		if (!this.settingsService.settings.saveWorkspace) return;
 		
-		const savedNotes = this.settingsService.settings.workspaceNotes;
-		if (!savedNotes.length) return;
+		const savedWorkspaceNotes = this.settingsService.settings.workspaceNotes;
+		if (!savedWorkspaceNotes.length) return;
 
 		const popoutLeaves: WorkspaceLeaf[] = [];
 		this.app.workspace.iterateAllLeaves((leaf) => {
@@ -131,16 +131,15 @@ export default class StickyNotesPlugin extends Plugin {
 			if (isPopout) popoutLeaves.push(leaf);
 		});
 
-		for (const saved of savedNotes) {
-			const match = popoutLeaves.find((leaf) => (leaf as any).id === saved.id);
-			if (!match) continue;
+		for (const curSavedNote of savedWorkspaceNotes) {
+			const popoutLeaf = popoutLeaves.find((leaf) => (leaf as any).id === curSavedNote.id);
+			if (!popoutLeaf) continue;
 			const stickyLeaf = new StickyNoteLeaf(
-				match,
+				popoutLeaf,
 				this.settingsService,
 				this.markdownService,
 			);
-			await stickyLeaf.initStickyNote(); 
-			// reapply saved color/pin/size here since initStickyNote(file=null) skips frontmatter color lookup
+			await stickyLeaf.initStickyNote(null, curSavedNote.color, false); 
 		}
 	}
 
